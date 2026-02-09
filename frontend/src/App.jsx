@@ -1,5 +1,10 @@
+import ProtectedRoute from "./routes/ProtectedRoute";
+import Unauthorized from "./pages/Unauthorized";
+import NotFound from "./pages/NotFound";
+
 import { useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -40,6 +45,32 @@ import EmployerManagement from "./pages/Admin/EmployerManagement";
 import AdminViewPostJob from "./pages/Admin/AdminViewPostJob";
 import AdminViewProfile from "./pages/Admin/AdminViewProfile";
 
+// When logged in → redirect "/" to "/findjob"
+// When logged out → show normal Home page
+const RootRoute = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Navigate to="/findjob" replace />;
+  }
+
+  return <Home />;
+};
+
+// When logged in → stay on "/findjob"
+// When logged out → redirect back to "/"
+{
+  /*const FindJobRoute = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <FindJob />;
+};*/
+}
+
 const App = () => {
   useEffect(() => {
     AOS.init({
@@ -60,47 +91,93 @@ const App = () => {
 
         {/* USER ROUTES (with navbar/footer) */}
         <Route element={<UserLayout />}>
-          <Route path="/" element={<Home />} />
+          {/* PUBLIC ROUTES WITH AUTH-AWARE BEHAVIOR */}
+          <Route path="/" element={<RootRoute />} />
           <Route path="/about" element={<About />} />
           <Route path="/findjob" element={<FindJob />} />
-          <Route path="/saved-jobs" element={<SavedJobs />} />
           <Route path="/view-job/:id" element={<ViewJobDetails />} />
 
-          <Route path="/worker/profile/:id" element={<WorkerProfile />} />
-          <Route path="/worker/profile/edit/:id" element={<EditWorkerProfile />} />
+          {/* STUDENT ONLY ROUTES */}
+          <Route
+            path="/saved-jobs"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <SavedJobs />
+              </ProtectedRoute>
+            }
+          />
 
-          <Route path="/worker/profile-form" element={<WorkerProfileForm />} />
+          <Route
+            path="/worker/profile/:id"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <WorkerProfile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/worker/profile/edit/:id"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <EditWorkerProfile />
+              </ProtectedRoute>
+            }
+          />
         </Route>
+
+        <Route path="/worker/profile-form" element={<WorkerProfileForm />} />
+        {/* STANDALONE EMPLOYER PROFILE FORM (no layout) */}
+        <Route path="/employer/profile-form" element={<ProfileForm />} />
 
         {/* Emplyer ROUTES (with navbar/footer) */}
         <Route path="/employer" element={<EmployerLayout />}>
           <Route index element={<EmployerDashboard />} />
-          <Route path="/employer/post-job" element={<PostJob />} />
-          <Route path="/employer/manage-jobs" element={<ManageJobs />} />
-          <Route path="/employer/applicants" element={<Candidates />} />
-          <Route path="/employer/profile/:id" element={<EmployerProfile />} />
-          <Route
-            path="/employer/profile/edit/:id"
-            element={<EditEmployerProfile />}
-          />
-          <Route path="/employer/profile-form" element={<ProfileForm />} />
+          <Route path="post-job" element={<PostJob />} />
+          <Route path="manage-jobs" element={<ManageJobs />} />
+          <Route path="applicants" element={<Candidates />} />
+          <Route path="profile/:id" element={<EmployerProfile />} />
+          <Route path="profile/edit/:id" element={<EditEmployerProfile />} />
           {/* <Route path="/employer/manage-jobs/view-job/:id" element={<ViewPostJobDetails/>} /> */}
           <Route
             path="manage-jobs/view-job/:id"
             element={<ViewPostJobDetails />}
           />
           <Route path="manage-jobs/edit-job/:id" element={<EditPostJob />} />
+          {/* Unknown employer sub-routes should show 404 (not 403) */}
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* Admin ROUTES (with navbar/footer) */}
-        <Route path="/admin" element={<AdminLayout/>}>
-             <Route index element={<AdminDashboard/>} />
-          <Route path="/admin/job-management" element={<JobManagement />} />
-          <Route path="/admin/worker-management" element={<WorkerManagement />} />
-          <Route path="/admin/employer-management" element={<EmployerManagement />} />
-           <Route path="/admin/job-management/view-postjob/:id" element={<AdminViewPostJob />} />
-          <Route path="/admin/worker-management/view-profile/:id" element={<AdminViewProfile />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="job-management" element={<JobManagement />} />
+          <Route path="worker-management" element={<WorkerManagement />} />
+          <Route path="employer-management" element={<EmployerManagement />} />
+          <Route
+            path="job-management/view-postjob/:id"
+            element={<AdminViewPostJob />}
+          />
+          <Route
+            path="worker-management/view-profile/:id"
+            element={<AdminViewProfile />}
+          />
+          {/* Unknown admin sub-routes should show 404 (not 403) */}
+          <Route path="*" element={<NotFound />} />
         </Route>
+
+        {/* 403 - Forbidden (logged in but wrong role) */}
+        <Route path="/unauthorized" element={<Unauthorized />} />
+
+        {/* Any other unknown URL should show 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );

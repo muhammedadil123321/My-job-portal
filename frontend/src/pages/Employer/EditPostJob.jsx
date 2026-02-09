@@ -45,7 +45,7 @@ export default function EditPostJob() {
     requiredSkills: [],
     city: "",
     state: "",
-    country: "",
+    district: "",
     workplaceAddress: "",
   });
 
@@ -77,7 +77,7 @@ export default function EditPostJob() {
       requiredSkills: job.requiredSkills || [],
       city: job.city || "",
       state: job.state || "",
-      country: job.country || "",
+      district: job.district || "",
       workplaceAddress: job.workplaceAddress || "",
     });
   }, [job, navigate]);
@@ -198,8 +198,8 @@ export default function EditPostJob() {
       if (!formData.state.trim()) {
         newErrors.state = "State is required";
       }
-      if (!formData.country.trim()) {
-        newErrors.country = "Country is required";
+      if (!formData.district.trim()) {
+        newErrors.district = "District is required";
       }
       if (!formData.workplaceAddress.trim()) {
         newErrors.workplaceAddress = "Workplace address is required";
@@ -623,6 +623,22 @@ export default function EditPostJob() {
                     />
                     <ErrorMessage field="city" errors={errors} />
                   </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      District <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="district"
+                      value={formData.district}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.district ? "border-red-500" : "border-gray-300"
+                      }`}
+                        placeholder="e.g. Ernakulam"
+                    />
+                    <ErrorMessage field="district" errors={errors} />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       State <span className="text-red-500">*</span>
@@ -639,22 +655,7 @@ export default function EditPostJob() {
                     />
                     <ErrorMessage field="state" errors={errors} />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Country <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.country ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="e.g. United States"
-                    />
-                    <ErrorMessage field="country" errors={errors} />
-                  </div>
+                 
                 </div>
 
                 <div>

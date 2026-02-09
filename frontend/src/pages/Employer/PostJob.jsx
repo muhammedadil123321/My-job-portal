@@ -39,7 +39,7 @@ export default function PostJob() {
     requiredSkills: [],
     city: "",
     state: "",
-    country: "",
+    district: "",
     workplaceAddress: "",
   });
 
@@ -144,8 +144,8 @@ export default function PostJob() {
       if (!formData.jobSummary.trim()) {
         newErrors.jobSummary = "Job summary is required";
       }
-      const filledResponsibilities = formData.responsibilities.filter(
-        (r) => r.trim()
+      const filledResponsibilities = formData.responsibilities.filter((r) =>
+        r.trim()
       );
       if (filledResponsibilities.length === 0) {
         newErrors.responsibilities = "At least one responsibility is required";
@@ -162,8 +162,8 @@ export default function PostJob() {
       if (!formData.state.trim()) {
         newErrors.state = "State is required";
       }
-      if (!formData.country.trim()) {
-        newErrors.country = "Country is required";
+      if (!formData.state.trim()) {
+        newErrors.district = "district is required";
       }
       if (!formData.workplaceAddress.trim()) {
         newErrors.workplaceAddress = "Workplace address is required";
@@ -588,6 +588,22 @@ export default function PostJob() {
                     />
                     <ErrorMessage field="city" errors={errors} />
                   </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      District <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="district"
+                      value={formData.district}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.district ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="e.g. Ernakulam"
+                    />
+                    <ErrorMessage field="district" errors={errors} />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       State <span className="text-red-500">*</span>
@@ -604,22 +620,7 @@ export default function PostJob() {
                     />
                     <ErrorMessage field="state" errors={errors} />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Country <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.country ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="e.g. United States"
-                    />
-                    <ErrorMessage field="country" errors={errors} />
-                  </div>
+                 
                 </div>
 
                 <div>

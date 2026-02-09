@@ -8,11 +8,13 @@ import {
   LogOut,
   Briefcase,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import logoIcon from "../../assets/images/logoicon.png";
+import { useAuth } from "../../context/AuthContext";
 
 function EmployerNavbar({ onMenuToggle }) {
-
+const { logout } = useAuth();
+const navigate = useNavigate();
 const [showProfileMenu, setShowProfileMenu] = useState(false);
 const [showNotifications, setShowNotifications] = useState(false);
 const id = 2
@@ -38,7 +40,11 @@ const id = 2
   ];
 
   const unreadCount = notifications.filter((n) => n.unread).length;
-
+   
+const handleLogout = () => {
+  logout();        // clear auth + localStorage
+  navigate("/");   // redirect to home
+};
   return (
     <nav className="w-full h-[72px] bg-white border-b  border-gray-200  ">
       <div className="h-full flex items-center justify-between px-8  max-w-[1920px] mx-auto">
@@ -227,10 +233,7 @@ const id = 2
                   <div className="border-t border-gray-100 py-2">
                     <button
                       className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition font-semibold w-full"
-                      onClick={() => {
-                        console.log("Logout");
-                        // Add logout logic
-                      }}
+                      onClick={handleLogout}
                     >
                       <LogOut size={18} />
                       <span className="text-sm">Sign Out</span>

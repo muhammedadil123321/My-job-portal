@@ -1,29 +1,18 @@
 import React, { useState } from 'react';
-import { Camera, MapPin, Phone, Mail, Briefcase, Check } from 'lucide-react';
+import { Building2, AlertCircle, Check, Mail, Phone, MapPin, Save, User, Briefcase, Shield } from 'lucide-react';
 
 export default function ProfileForm() {
-  const [profileImage, setProfileImage] = useState(null);
   const [formData, setFormData] = useState({
-    shopName: '',
-    businessCategory: '',
-    city: '',
-    phoneNumber: '',
+    businessName: '',
+    state: '',
+    district: '',
+    address: '',
     email: '',
-    aboutDescription: ''
+    phoneNumber: ''
   });
 
   const [errors, setErrors] = useState({});
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const [touched, setTouched] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,7 +20,6 @@ export default function ProfileForm() {
       ...prev,
       [name]: value
     }));
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -40,32 +28,47 @@ export default function ProfileForm() {
     }
   };
 
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.shopName.trim()) {
-      newErrors.shopName = 'Business name is required';
+    if (!formData.businessName.trim()) {
+      newErrors.businessName = 'Required';
+    } else if (formData.businessName.trim().length < 2) {
+      newErrors.businessName = 'At least 2 characters';
     }
-    if (!formData.businessCategory.trim()) {
-      newErrors.businessCategory = 'Business category is required';
+
+    if (!formData.state.trim()) {
+      newErrors.state = 'Required';
     }
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
+
+    if (!formData.district.trim()) {
+      newErrors.district = 'Required';
     }
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^[+]?[\d\s-()]+$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Invalid phone number format';
+
+    if (!formData.address.trim()) {
+      newErrors.address = 'Required';
+    } else if (formData.address.trim().length < 10) {
+      newErrors.address = 'Enter complete address';
     }
+
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = 'Invalid email';
     }
-    if (!formData.aboutDescription.trim()) {
-      newErrors.aboutDescription = 'Company description is required';
-    } else if (formData.aboutDescription.length < 50) {
-      newErrors.aboutDescription = 'Description should be at least 50 characters';
+
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Required';
+    } else if (!/^[+]?[\d\s-()]{10,}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
+      newErrors.phoneNumber = 'Invalid phone number';
     }
 
     setErrors(newErrors);
@@ -74,256 +77,304 @@ export default function ProfileForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const allTouched = Object.keys(formData).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
+    setTouched(allTouched);
+
     if (validateForm()) {
       console.log('Form submitted:', formData);
-      alert('Profile setup complete! Your account is pending approval.');
-      // Here you would typically send data to your backend
+      alert('✓ Business profile saved successfully! You can now start posting jobs.');
+      setFormData({
+        businessName: '',
+        state: '',
+        district: '',
+        address: '',
+        email: '',
+        phoneNumber: ''
+      });
+      setErrors({});
+      setTouched({});
     }
+   
   };
 
-  const businessCategories = [
-    'Technology',
-    'Healthcare',
-    'Education',
-    'Retail',
-    'Manufacturing',
-    'Construction',
-    'Finance',
-    'Hospitality',
-    'Transportation',
-    'Other'
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className=" bg-gradient-to-br  px-4">
+      <div className="max-w-6xl mx-auto pt-16 ">
         
-        {/* Form Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        {/* Unique Split Layout */}
+        <div className="grid lg:grid-cols-5 gap-0 bg-white border-gray-200 border-1 rounded-3xl shadow-lg overflow-hidden">
           
-          {/* Header */}
-          <div className="px-6 py-6 border-b border-gray-200">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Complete Your Employer Profile
-            </h1>
-            <p className="text-gray-600">
-              Fill in your business details to start posting jobs
-            </p>
+          {/* Left Sidebar - Brand Section */}
+          <div className="lg:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 lg:p-12 text-white relative overflow-hidden">
+            {/* Decorative Elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+            
+            <div className="relative z-10">
+              {/* Logo/Icon */}
+              <div className="mb-8">
+                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4">
+                  <Building2 size={32} className="text-white" />
+                </div>
+                <h1 className="text-3xl font-bold mb-2">Complete Your Profile</h1>
+                <p className="text-blue-100">Set up your business profile to start hiring</p>
+              </div>
+
+              {/* Features List */}
+              <div className="space-y-6 mt-12">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Briefcase size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Post Jobs Easily</h3>
+                    <p className="text-sm text-blue-100">Create and manage job listings in minutes</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <User size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Find Qualified Talent</h3>
+                    <p className="text-sm text-blue-100">Access a pool of skilled job seekers</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Shield size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Verified & Secure</h3>
+                    <p className="text-sm text-blue-100">Your business profile will be verified</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className=" mt-12 pt-8 border-t border-white/20">
+                
+              </div>
+            </div>
           </div>
 
-          {/* Form Content */}
-          <form onSubmit={handleSubmit} className="px-6 py-8">
-            
-            {/* Profile Picture Section */}
-            <div className="mb-8 pb-8 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h2>
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-gray-200">
-                    {profileImage ? (
-                      <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-3xl font-semibold text-gray-600">
-                        {formData.shopName.charAt(0) || '?'}
-                      </span>
+          {/* Right Section - Form */}
+          <div className="lg:col-span-3 p-8 lg:p-12">
+            {/* Form Header */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Business Profile Setup</h2>
+              <p className="text-gray-600">Provide your business details for verification</p>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-5">
+                
+                {/* Business Name & Email Row */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Business Name */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Business Name <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        name="businessName"
+                        value={formData.businessName}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
+                          touched.businessName && errors.businessName
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                        }`}
+                        placeholder="Your Company Name"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <Building2 size={18} className="text-gray-400" />
+                      </div>
+                    </div>
+                    {touched.businessName && errors.businessName && (
+                      <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle size={12} /> {errors.businessName}
+                      </p>
                     )}
                   </div>
-                  <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 shadow-md transition">
-                    <Camera size={16} className="text-white" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-700 mb-1 font-medium">Upload your company logo</p>
-                  <p className="text-xs text-gray-500">JPG, PNG or GIF (max 5MB) - Optional</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Business Information */}
-            <div className="mb-8 pb-8 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Business Information</h2>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Business/Company Name *
-                  </label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="text"
-                      name="shopName"
-                      value={formData.shopName}
-                      onChange={handleChange}
-                      className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.shopName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="e.g., TechVista Solutions"
-                    />
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Business Email <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
+                          touched.email && errors.email
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                        }`}
+                        placeholder="contact@company.com"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <Mail size={18} className="text-gray-400" />
+                      </div>
+                    </div>
+                    {touched.email && errors.email && (
+                      <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle size={12} /> {errors.email}
+                      </p>
+                    )}
                   </div>
-                  {errors.shopName && (
-                    <p className="mt-1 text-sm text-red-600">{errors.shopName}</p>
-                  )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Business Category *
-                  </label>
-                  <select
-                    name="businessCategory"
-                    value={formData.businessCategory}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.businessCategory ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select a category</option>
-                    {businessCategories.map(category => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
-                  {errors.businessCategory && (
-                    <p className="mt-1 text-sm text-red-600">{errors.businessCategory}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City *
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.city ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="e.g., Bangalore"
-                    />
+                {/* Phone, District, State Row */}
+                <div className="grid md:grid-cols-3 gap-6">
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Contact Number <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="tel"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
+                          touched.phoneNumber && errors.phoneNumber
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                        }`}
+                        placeholder="+91 XXXXX XXXXX"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <Phone size={18} className="text-gray-400" />
+                      </div>
+                    </div>
+                    {touched.phoneNumber && errors.phoneNumber && (
+                      <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle size={12} /> {errors.phoneNumber}
+                      </p>
+                    )}
                   </div>
-                  {errors.city && (
-                    <p className="mt-1 text-sm text-red-600">{errors.city}</p>
-                  )}
-                </div>
-              </div>
-            </div>
 
-            {/* Contact Information */}
-            <div className="mb-8 pb-8 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h2>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleChange}
-                      className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="+91 98765 43210"
-                    />
+                  {/* District */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      District <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        name="district"
+                        value={formData.district}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
+                          touched.district && errors.district
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                        }`}
+                        placeholder="e.g., Tirur"
+                      />
+                    </div>
+                    {touched.district && errors.district && (
+                      <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle size={12} /> {errors.district}
+                      </p>
+                    )}
                   </div>
-                  {errors.phoneNumber && (
-                    <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
-                  )}
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.email ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="contact@company.com"
-                    />
+                  {/* State */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
+                          touched.state && errors.state
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                        }`}
+                        placeholder="e.g., Kerala"
+                      />
+                    </div>
+                    {touched.state && errors.state && (
+                      <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle size={12} /> {errors.state}
+                      </p>
+                    )}
                   </div>
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Business Address <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      rows={3}
+                      className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 resize-none ${
+                        touched.address && errors.address
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                      }`}
+                      placeholder="Street, Building, Area, City, PIN Code"
+                    />
+                    <div className="absolute top-3.5 right-3 pointer-events-none">
+                      <MapPin size={18} className="text-gray-400" />
+                    </div>
+                  </div>
+                  {touched.address && errors.address && (
+                    <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle size={12} /> {errors.address}
+                    </p>
                   )}
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> This contact information will be visible to job seekers when you post jobs.
-                  </p>
-                </div>
+              
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 group"
+                >
+                  <Save size={20} />
+                  Save Business Profile
+                </button>
+
+             
               </div>
-            </div>
-
-            {/* About Company */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">About Your Company</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Description *
-                </label>
-                <textarea
-                  name="aboutDescription"
-                  value={formData.aboutDescription}
-                  onChange={handleChange}
-                  maxLength={250}
-                  rows={5}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
-                    errors.aboutDescription ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Write a brief description about your company, what you do, and what makes you unique..."
-                />
-                <div className="flex justify-between items-center mt-2">
-                  <p className={`text-sm ${formData.aboutDescription.length < 50 ? 'text-gray-500' : 'text-green-600'}`}>
-                    {formData.aboutDescription.length}/250 characters (minimum 50)
-                  </p>
-                </div>
-                {errors.aboutDescription && (
-                  <p className="mt-1 text-sm text-red-600">{errors.aboutDescription}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Approval Notice */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-amber-800">
-                <strong>Approval Required:</strong> Your profile will be reviewed by our team. You'll be able to post jobs once approved (usually within 24 hours).
-              </p>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white text-base font-semibold rounded-lg hover:bg-blue-700 transition shadow-md"
-            >
-              <Check size={20} />
-              Complete Profile Setup
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
 
-        {/* Help Text */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Need help? <a href="#" className="text-blue-600 hover:underline font-medium">Contact Support</a>
+        {/* Bottom Help Text */}
+        <div className="text-center mt-6">
+          <p className="text-gray-600 text-sm">
+            Need assistance? <a href="#" className="text-blue-600 font-semibold hover:underline">Contact Support</a>
           </p>
         </div>
       </div>

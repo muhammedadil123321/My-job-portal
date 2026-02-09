@@ -135,10 +135,11 @@ function ViewJobDetails() {
         </div>
 
         {/* MAIN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 ">
           
           {/* LEFT CONTENT - SCROLLABLE Y AXIS */}
-          <div className="lg:col-span-2 max-h-[calc(100vh-180px)] sm:overflow-y-scroll">
+          <div className="lg:col-span-2 lg:max-h-[calc(100vh-180px)] lg:overflow-y-auto">
+
             <div className="space-y-6 md:space-y-8 pr-0 md:pr-4">
               
               {/* Job Header */}

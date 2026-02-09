@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { Bell, Menu, ChevronDown, User, Settings, LogOut } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function AdminNavbar({ onMenuToggle }) {
+
+  const { logout } = useAuth();
+const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -12,7 +17,10 @@ function AdminNavbar({ onMenuToggle }) {
   ];
 
   const unreadCount = notifications.filter(n => n.unread).length;
-
+  const handleLogout = () => {
+    logout();        // clear auth + localStorage
+    navigate("/");   // redirect to home
+  };
   return (
     <nav className=" w-full h-[72px] bg-white border-b-2 border-gray-100">
       <div className="h-full flex items-center justify-between px-6 max-w-[1920px] mx-auto">
@@ -149,10 +157,7 @@ function AdminNavbar({ onMenuToggle }) {
                   <div className="border-t border-gray-100 py-2">
                     <button
                       className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition font-semibold w-full"
-                      onClick={() => {
-                        console.log("Logout");
-                        // Add logout logic
-                      }}
+                      onClick={handleLogout}
                     >
                       <LogOut size={18} />
                       <span className="text-sm">Sign Out</span>
