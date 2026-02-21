@@ -4,27 +4,40 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 function AdminNavbar({ onMenuToggle }) {
-
-  const { logout } = useAuth();
-const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const notifications = [
-    { id: 1, text: "New application for Frontend Developer position", time: "2 minutes ago", unread: true },
-    { id: 2, text: "Job posting 'Senior React Developer' has been approved", time: "1 hour ago", unread: true },
-    { id: 3, text: "5 new candidates viewed your company profile", time: "3 hours ago", unread: false },
+    {
+      id: 1,
+      text: "New application for Frontend Developer position",
+      time: "2 minutes ago",
+      unread: true,
+    },
+    {
+      id: 2,
+      text: "Job posting 'Senior React Developer' has been approved",
+      time: "1 hour ago",
+      unread: true,
+    },
+    {
+      id: 3,
+      text: "5 new candidates viewed your company profile",
+      time: "3 hours ago",
+      unread: false,
+    },
   ];
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const unreadCount = notifications.filter((n) => n.unread).length;
   const handleLogout = () => {
-    logout();        // clear auth + localStorage
-    navigate("/");   // redirect to home
+    logout(); // clear auth + localStorage
+    navigate("/"); // redirect to home
   };
   return (
     <nav className=" w-full h-[72px] bg-white border-b-2 border-gray-100">
       <div className="h-full flex items-center justify-between px-6 max-w-[1920px] mx-auto">
-
         {/* LEFT SECTION (for mobile menu toggle) */}
         <div className="flex items-center gap-6">
           {/* Mobile Menu Toggle */}
@@ -38,7 +51,6 @@ const navigate = useNavigate();
 
         {/* RIGHT SECTION (Notifications and Profile) */}
         <div className="flex items-center gap-4">
-
           {/* Notifications */}
           <div className="relative">
             <button
@@ -59,7 +71,10 @@ const navigate = useNavigate();
             {/* Notification Dropdown */}
             {showNotifications && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowNotifications(false)}
+                />
                 <div className="absolute right-0 top-full mt-3 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
                   {/* Header */}
                   <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -79,7 +94,7 @@ const navigate = useNavigate();
                       <div
                         key={notif.id}
                         className={`px-5 py-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition ${
-                          notif.unread ? 'bg-blue-50/30' : ''
+                          notif.unread ? "bg-blue-50/30" : ""
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -87,10 +102,18 @@ const navigate = useNavigate();
                             <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm leading-relaxed ${notif.unread ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
+                            <p
+                              className={`text-sm leading-relaxed ${
+                                notif.unread
+                                  ? "text-gray-900 font-medium"
+                                  : "text-gray-700"
+                              }`}
+                            >
                               {notif.text}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1.5">{notif.time}</p>
+                            <p className="text-xs text-gray-500 mt-1.5">
+                              {notif.time}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -118,29 +141,46 @@ const navigate = useNavigate();
               className="flex items-center gap-3 pr-2 py-2 hover:bg-gray-50 rounded-lg transition group"
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                A
+                {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
               </div>
+
               <div className="hidden md:block text-left">
-                <p className="text-sm font-semibold text-gray-900 leading-tight">Admin User</p>
-                <p className="text-xs text-gray-500">admin@earnease.com</p>
+                <p className="text-sm font-semibold text-gray-900 leading-tight">
+                  {user?.name || "Admin"}
+                </p>
+
+                <p className="text-xs text-gray-500">
+                  {user?.email || "No email"}
+                </p>
               </div>
-              <ChevronDown size={16} className="text-gray-500 hidden md:block group-hover:text-gray-700" />
+              <ChevronDown
+                size={16}
+                className="text-gray-500 hidden md:block group-hover:text-gray-700"
+              />
             </button>
 
             {/* Profile Dropdown */}
             {showProfileMenu && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowProfileMenu(false)}
+                />
                 <div className="absolute right-0 top-full mt-3 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
                   {/* User Info */}
                   <div className="px-4 py-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
-                        A
+                        {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 truncate">Admin User</p>
-                        <p className="text-sm text-gray-600 truncate">admin@earnease.com</p>
+                        <p className="font-bold text-gray-900 truncate">
+                          {user?.name || "Admin"}
+                        </p>
+
+                        <p className="text-sm text-gray-600 truncate">
+                          {user?.email || "No email"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -167,7 +207,6 @@ const navigate = useNavigate();
               </>
             )}
           </div>
-
         </div>
       </div>
     </nav>

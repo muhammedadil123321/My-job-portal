@@ -27,8 +27,7 @@ const ErrorMessage = ({ field, errors }) => {
 };
 
 export default function EditPostJob() {
-  const { id } = useParams();
-  const jobId = Number(id);
+  const { id } = useParams();              // id is a plain string from the URL
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -46,20 +45,41 @@ export default function EditPostJob() {
     city: "",
     state: "",
     district: "",
+    country: "",
     workplaceAddress: "",
   });
 
   const [currentSkill, setCurrentSkill] = useState("");
   const [errors, setErrors] = useState({});
-  const { jobs, updateJob } = useContext(JobContext);
+  const { jobs, updateJob, fetchJobById } = useContext(JobContext);
 
-  const job = jobs.find((j) => j.id === jobId);
+  // 1️⃣ Try to find the job in context first (already loaded list)
+  const [job, setJob] = useState(() => jobs.find((j) => j._id === id) || null);
+  const [loading, setLoading] = useState(!job);
+  const [fetchError, setFetchError] = useState(null);
 
+  // 2️⃣ On page refresh or direct URL access, jobs[] may be empty — fetch individually
   useEffect(() => {
-    if (!job) {
-      navigate("/employer/manage-jobs");
-      return;
-    }
+    if (job) return; // already found in context
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const fetched = await fetchJobById(id); // API call: GET /api/jobs/:id
+        setJob(fetched);
+      } catch (err) {
+        setFetchError("Job not found or failed to load.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);
+
+  // 3️⃣ Populate form once job is available
+  useEffect(() => {
+    if (!job) return;
 
     setFormData({
       workPlaceName: job.workPlaceName || "",
@@ -71,16 +91,15 @@ export default function EditPostJob() {
       salaryMax: job.salaryMax || "",
       salaryType: job.salaryType ? String(job.salaryType).toLowerCase() : "",
       jobSummary: job.jobSummary || "",
-      responsibilities: job.responsibilities?.length
-        ? job.responsibilities
-        : [""],
+      responsibilities: job.responsibilities?.length ? job.responsibilities : [""],
       requiredSkills: job.requiredSkills || [],
       city: job.city || "",
       state: job.state || "",
       district: job.district || "",
+      country: job.country || "",
       workplaceAddress: job.workplaceAddress || "",
     });
-  }, [job, navigate]);
+  }, [job]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -142,68 +161,47 @@ export default function EditPostJob() {
     const newErrors = {};
 
     if (currentStep === 1) {
-      if (!formData.workPlaceName.trim()) {
+      if (!formData.workPlaceName.trim())
         newErrors.workPlaceName = "Workplace name is required";
-      }
-      if (!formData.jobTitle.trim()) {
+      if (!formData.jobTitle.trim())
         newErrors.jobTitle = "Job title is required";
-      }
-      if (!formData.jobType) {
+      if (!formData.jobType)
         newErrors.jobType = "Job type is required";
-      }
-      if (!formData.workingTimeStart) {
+      if (!formData.workingTimeStart)
         newErrors.workingTimeStart = "Start time is required";
-      }
-      if (!formData.workingTimeEnd) {
+      if (!formData.workingTimeEnd)
         newErrors.workingTimeEnd = "End time is required";
-      }
-      if (!formData.salaryType) {
+      if (!formData.salaryType)
         newErrors.salaryType = "Payment period is required";
-      }
-      if (!formData.salaryMin) {
+      if (!formData.salaryMin)
         newErrors.salaryMin = "Minimum salary is required";
-      }
-      if (!formData.salaryMax) {
+      if (!formData.salaryMax)
         newErrors.salaryMax = "Maximum salary is required";
-      }
       if (
         formData.salaryMin &&
         formData.salaryMax &&
         parseFloat(formData.salaryMin) > parseFloat(formData.salaryMax)
       ) {
-        newErrors.salaryMin =
-          "Minimum salary cannot be greater than maximum salary";
+        newErrors.salaryMin = "Minimum salary cannot be greater than maximum salary";
       }
     }
 
     if (currentStep === 2) {
-      if (!formData.jobSummary.trim()) {
+      if (!formData.jobSummary.trim())
         newErrors.jobSummary = "Job summary is required";
-      }
-      const filledResponsibilities = formData.responsibilities.filter(
-        (r) => r.trim()
-      );
-      if (filledResponsibilities.length === 0) {
+      const filledResponsibilities = formData.responsibilities.filter((r) => r.trim());
+      if (filledResponsibilities.length === 0)
         newErrors.responsibilities = "At least one responsibility is required";
-      }
-      if (formData.requiredSkills.length === 0) {
+      if (formData.requiredSkills.length === 0)
         newErrors.requiredSkills = "At least one skill is required";
-      }
     }
 
     if (currentStep === 3) {
-      if (!formData.city.trim()) {
-        newErrors.city = "City is required";
-      }
-      if (!formData.state.trim()) {
-        newErrors.state = "State is required";
-      }
-      if (!formData.district.trim()) {
-        newErrors.district = "District is required";
-      }
-      if (!formData.workplaceAddress.trim()) {
+      if (!formData.city.trim()) newErrors.city = "City is required";
+      if (!formData.state.trim()) newErrors.state = "State is required";
+      if (!formData.district.trim()) newErrors.district = "District is required";
+      if (!formData.workplaceAddress.trim())
         newErrors.workplaceAddress = "Workplace address is required";
-      }
     }
 
     setErrors(newErrors);
@@ -223,13 +221,24 @@ export default function EditPostJob() {
     }
   };
 
-  const handleSubmit = () => {
-    if (validateStep(step)) {
-      updateJob(jobId, {
+  const handleSubmit = async () => {
+    if (!validateStep(3)) return;   // always validate step 3 explicitly
+
+    // Clean up responsibilities — remove blank entries before saving
+    const cleanedFormData = {
+      ...formData,
+      responsibilities: formData.responsibilities.filter((r) => r.trim()),
+    };
+
+    try {
+      await updateJob(id, {         // ✅ string _id, awaited in case it's async
         ...job,
-        ...formData,
+        ...cleanedFormData,
       });
       navigate("/employer/manage-jobs");
+    } catch (err) {
+      console.error("Failed to update job:", err);
+      setFetchError("Failed to save changes. Please try again.");
     }
   };
 
@@ -241,16 +250,42 @@ export default function EditPostJob() {
 
   const getSalaryPlaceholder = (salaryType) => {
     switch (salaryType) {
-      case "monthly":
-        return "Enter monthly salary";
-      case "daily":
-        return "Enter daily wage";
-      case "hourly":
-        return "Enter hourly rate";
-      default:
-        return "Enter salary";
+      case "monthly": return "Enter monthly salary";
+      case "daily":   return "Enter daily wage";
+      case "hourly":  return "Enter hourly rate";
+      default:        return "Enter salary";
     }
   };
+
+  // ── Render states ─────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500 text-sm">Loading job details...</p>
+      </div>
+    );
+  }
+
+  if (fetchError || !job) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {fetchError || "Job not found"}
+          </h2>
+          <button
+            onClick={() => navigate(-1)}
+            className="text-sm text-gray-600 hover:text-gray-900"
+          >
+            Go back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-full bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
@@ -329,9 +364,7 @@ export default function EditPostJob() {
                       value={formData.workPlaceName}
                       onChange={handleChange}
                       className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.workPlaceName
-                          ? "border-red-500"
-                          : "border-gray-300"
+                        errors.workPlaceName ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="e.g. TVS Ltd"
                     />
@@ -390,9 +423,7 @@ export default function EditPostJob() {
                         value={formData.workingTimeStart}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeStart
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.workingTimeStart ? "border-red-500" : "border-gray-300"
                         }`}
                       />
                       <ErrorMessage field="workingTimeStart" errors={errors} />
@@ -407,9 +438,7 @@ export default function EditPostJob() {
                         value={formData.workingTimeEnd}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeEnd
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.workingTimeEnd ? "border-red-500" : "border-gray-300"
                         }`}
                       />
                       <ErrorMessage field="workingTimeEnd" errors={errors} />
@@ -431,9 +460,7 @@ export default function EditPostJob() {
                         value={formData.salaryType}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryType
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.salaryType ? "border-red-500" : "border-gray-300"
                         }`}
                       >
                         <option value="">Select payment period</option>
@@ -453,9 +480,7 @@ export default function EditPostJob() {
                         value={formData.salaryMin}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMin
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.salaryMin ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
@@ -471,9 +496,7 @@ export default function EditPostJob() {
                         value={formData.salaryMax}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMax
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.salaryMax ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
@@ -594,9 +617,7 @@ export default function EditPostJob() {
                   ) : (
                     <div className="text-center py-8 bg-gray-50 rounded-md border border-gray-200">
                       <Target className="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                      <p className="text-gray-500 text-sm">
-                        No skills added yet
-                      </p>
+                      <p className="text-gray-500 text-sm">No skills added yet</p>
                     </div>
                   )}
                 </div>
@@ -623,7 +644,7 @@ export default function EditPostJob() {
                     />
                     <ErrorMessage field="city" errors={errors} />
                   </div>
-                   <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       District <span className="text-red-500">*</span>
                     </label>
@@ -635,7 +656,7 @@ export default function EditPostJob() {
                       className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.district ? "border-red-500" : "border-gray-300"
                       }`}
-                        placeholder="e.g. Ernakulam"
+                      placeholder="e.g. Ernakulam"
                     />
                     <ErrorMessage field="district" errors={errors} />
                   </div>
@@ -655,7 +676,6 @@ export default function EditPostJob() {
                     />
                     <ErrorMessage field="state" errors={errors} />
                   </div>
-                 
                 </div>
 
                 <div>
@@ -668,9 +688,7 @@ export default function EditPostJob() {
                     onChange={handleChange}
                     rows="3"
                     className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                      errors.workplaceAddress
-                        ? "border-red-500"
-                        : "border-gray-300"
+                      errors.workplaceAddress ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Enter the complete workplace address"
                   />

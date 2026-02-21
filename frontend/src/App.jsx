@@ -108,7 +108,7 @@ const App = () => {
           />
 
           <Route
-            path="/worker/profile/:id"
+            path="/worker/profile"
             element={
               <ProtectedRoute allowedRoles={["student"]}>
                 <WorkerProfile />
@@ -117,7 +117,7 @@ const App = () => {
           />
 
           <Route
-            path="/worker/profile/edit/:id"
+            path="/worker/profile/edit"
             element={
               <ProtectedRoute allowedRoles={["student"]}>
                 <EditWorkerProfile />
@@ -136,8 +136,8 @@ const App = () => {
           <Route path="post-job" element={<PostJob />} />
           <Route path="manage-jobs" element={<ManageJobs />} />
           <Route path="applicants" element={<Candidates />} />
-          <Route path="profile/:id" element={<EmployerProfile />} />
-          <Route path="profile/edit/:id" element={<EditEmployerProfile />} />
+          <Route path="profile" element={<EmployerProfile />} />
+          <Route path="profile/edit" element={<EditEmployerProfile />} />
           {/* <Route path="/employer/manage-jobs/view-job/:id" element={<ViewPostJobDetails/>} /> */}
           <Route
             path="manage-jobs/view-job/:id"

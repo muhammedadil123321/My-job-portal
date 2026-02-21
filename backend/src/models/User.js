@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -18,6 +17,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['student', 'employer', 'admin'],
     required: true,
+  },
+  profileImage: {        // ✅ ADD THIS
+    type: String,
+    default: "",
   },
   isActive: {
     type: Boolean,

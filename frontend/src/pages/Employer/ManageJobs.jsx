@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Search, Plus, Edit, Eye, Users, Trash2, Calendar, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { JobContext } from "../../context/JobContext";
@@ -10,7 +10,12 @@ const ManageJobs = () => {
   const [typeFilter, setTypeFilter] = useState("All");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState(null);
-  const { jobs, deleteJob } = useContext(JobContext);
+  const { jobs, deleteJob,fetchJobs } = useContext(JobContext);
+
+
+  useEffect(() => {
+  fetchJobs();
+}, []);
 
   // Filter jobs based on search and filters
   const filteredJobs = jobs.filter(job => {
@@ -203,19 +208,16 @@ const ManageJobs = () => {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-4 h-4 text-gray-500" />
-                          <span>Posted {new Date(job.postedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          <span>Posted {new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Users className="w-4 h-4 text-gray-500" />
-                          <span className="font-semibold text-blue-600">{job.applications} Applicants</span>
-                        </div>
+                       
                       </div>
                     </div>
 
                     {/* Right Side - Actions */}
                     <div className="flex flex-row gap-2 lg:min-w-[140px]">
                       <button
-                        onClick={() => navigate(`view-job/${job.id}`)}
+                        onClick={() => navigate(`view-job/${job._id}`)}
                         className="flex-1 lg:flex-none inline-flex items-center justify-center px-2 py-2 text-sm font-medium text-blue-700 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
                       >
                         <Eye className="w-4 h-4 lg:mr-2" />
@@ -223,7 +225,7 @@ const ManageJobs = () => {
                       </button>
                       
                       <button
-                        onClick={() => navigate(`edit-job/${job.id}`)}
+                        onClick={() => navigate(`edit-job/${job._id}`)}
                         className="flex-1 lg:flex-none inline-flex items-center justify-center px-2 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
                       >
                         <Edit className="w-4 h-4 lg:mr-2" />
@@ -231,7 +233,7 @@ const ManageJobs = () => {
                       </button>
                       
                       <button
-                        onClick={() => openDeleteModal(job.id)}
+                        onClick={() => openDeleteModal(job._id)}
                         className="flex-1 lg:flex-none inline-flex items-center justify-center px-2 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-300 rounded-md hover:bg-red-100 transition-colors"
                       >
                         <Trash2 className="w-4 h-4 lg:mr-2" />

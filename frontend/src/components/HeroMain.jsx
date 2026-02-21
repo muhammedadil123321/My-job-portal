@@ -184,67 +184,7 @@ const HeroMain = () => {
           }}
         ></div>
       </div>
-
-      <style>{`
-        @keyframes rotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes float3d {
-          0%, 100% { 
-            transform: perspective(1200px) rotateX(var(--rotX, 15deg)) rotateY(var(--rotY, -25deg)) translateZ(50px) translateY(0px); 
-          }
-          50% { 
-            transform: perspective(1200px) rotateX(var(--rotX, 15deg)) rotateY(var(--rotY, -25deg)) translateZ(50px) translateY(-20px); 
-          }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease-out;
-        }
-        .animate-slideDown {
-          animation: slideDown 0.8s ease-out;
-        }
-        .animate-slideUp {
-          animation: slideUp 0.8s ease-out 0.2s backwards;
-        }
-        .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out 0.4s backwards;
-        }
-      `}</style>
+ 
 
       {/* CONTENT */}
       <div className="relative z-10 pt-28 lg:pt-40 w-full flex flex-col items-center">

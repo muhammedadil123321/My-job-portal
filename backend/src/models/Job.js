@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 const jobSchema = new mongoose.Schema(
   {
-    // Basic Info
     workPlaceName: {
       type: String,
       required: true,
@@ -20,19 +19,10 @@ const jobSchema = new mongoose.Schema(
       required: true,
     },
 
-    responsibilities: [
-      {
-        type: String,
-      },
-    ],
+    responsibilities: [String],
 
-    requiredSkills: [
-      {
-        type: String,
-      },
-    ],
+    requiredSkills: [String],
 
-    // Job Nature
     jobType: {
       type: String,
       enum: ["part-time", "hourly", "weekend-time", "season-time"],
@@ -43,31 +33,23 @@ const jobSchema = new mongoose.Schema(
       type: String,
       enum: ["active", "pending", "blocked", "rejected"],
       default: "pending",
+      index: true,
     },
 
-    // Working Time
-    workingTimeStart: {
-      type: String, // "HH:mm"
-    },
-    workingTimeEnd: {
-      type: String,
-    },
+    workingTimeStart: String,
+    workingTimeEnd: String,
 
-    // Salary
-    salaryMin: {
-      type: Number,
-    },
-    salaryMax: {
-      type: Number,
-    },
+    salaryMin: Number,
+    salaryMax: Number,
+
     salaryType: {
       type: String,
       enum: ["hourly", "daily", "monthly"],
     },
 
-    // Location
     city: String,
     state: String,
+    district: String,
     country: String,
     workplaceAddress: String,
 
@@ -76,18 +58,12 @@ const jobSchema = new mongoose.Schema(
       longitude: Number,
     },
 
-    // Relations
     employer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
-    applicants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
 
     applicationsCount: {
       type: Number,
@@ -98,6 +74,7 @@ const jobSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
   },
   { timestamps: true }
 );

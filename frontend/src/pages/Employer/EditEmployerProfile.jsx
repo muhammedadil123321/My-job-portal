@@ -1,36 +1,113 @@
-import { useContext, useEffect, useState } from "react";
-import { ProfileContext } from "../../context/ProfileContext";
-import { useNavigate, useParams } from "react-router-dom";
-import { Camera, MapPin, Phone, Mail, Briefcase, Save, X } from 'lucide-react';
+import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Camera,
+  MapPin,
+  Phone,
+  Save,
+  X,
+} from "lucide-react";
 
 export default function EditEmployerProfile() {
-  const { employerProfile, updateEmployerProfile } = useContext(ProfileContext);
-  
-  const [formData, setFormData] = useState(null);
-  const [profileImage, setProfileImage] = useState(null);
   const navigate = useNavigate();
-  const { id } = useParams();
+
+  const [formData, setFormData] = useState({
+    businessName: "",
+    phoneNumber: "",
+    district: "",
+    state: "",
+    address: "",
+    aboutCompany: "",
+    profileImage: "",
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
+
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    if (!Array.isArray(employerProfile) || employerProfile.length === 0) return;
+    isMountedRef.current = true;
 
-    const employer = employerProfile.find((item) => item.id === Number(id));
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-    if (employer) {
-      setFormData({
-        ...employer,
-        aboutDescription: employer.aboutDescription || ""
-      });
-      setProfileImage(employer.profileImage || null);
-    }
-  }, [id, employerProfile]);
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:5001/api/employer-profile/me",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+
+        if (response.status === 404) {
+          navigate("/employer/profile-form");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const data = await response.json();
+
+        if (isMountedRef.current) {
+          setFormData({
+            businessName: data.businessName || "",
+            phoneNumber: data.phoneNumber || "",
+            district: data.district || "",
+            state: data.state || "",
+            address: data.address || "",
+            aboutCompany: data.aboutCompany || "",
+            profileImage: data.profileImage || "",
+          });
+          setProfileImagePreview(data.profileImage || null);
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [navigate]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result);
+        setProfileImagePreview(reader.result);
+        setFormData((prev) => ({
+          ...prev,
+          profileImage: reader.result,
+        }));
       };
       reader.readAsDataURL(file);
     }
@@ -38,57 +115,122 @@ export default function EditEmployerProfile() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleSave = () => {
-    const updateEmployers = employerProfile.map(employer=>
-      employer.id === formData.id
-      ?{
-        ...formData,
-        profileImage: profileImage || employer.profileImage,
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
       }
-       : employer
-    )
-    
-    updateEmployerProfile(updateEmployers);
-    navigate(`/employer/profile/${formData.id}`);
+
+      const response = await fetch(
+        "http://localhost:5001/api/employer-profile/me",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      // No updateUser here — businessName is NOT user.name
+      // EmployerNavbar will re-fetch fresh employerProfile via this event
+      window.dispatchEvent(new Event("employer:profileUpdated"));
+
+      navigate("/employer/profile");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    navigate(`/employer/profile/${formData.id}`);
+    navigate("/employer/profile");
   };
 
-  if (!formData) {
-    return <div className="min-h-screen bg-gray-50 pt-28 flex items-center justify-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-28 pb-12 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+            role="status"
+            aria-label="Loading profile"
+          ></div>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !saving) {
+    return (
+      <div className="min-h-screen pt-28 pb-12 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 font-medium">Error: {error}</p>
+          <button
+            onClick={() => navigate("/employer/profile")}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            Back to Profile
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-28 pb-12 px-4">
       <div className="max-w-5xl mx-auto">
-        
-        {/* Profile Card */}
         <div className="bg-white rounded-lg shadow border border-gray-200">
-          
+
           {/* Header Section */}
           <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
               <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+
                 {/* Profile Image */}
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-gray-200">
-                    {profileImage ? (
-                      <img 
-                        src={profileImage} 
-                        alt="Profile" 
-                        className="w-full h-full object-cover" 
+                  <div className="w-24 h-24 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center overflow-hidden border-2 border-gray-200">
+                    {profileImagePreview ? (
+                      <img
+                        src={profileImagePreview}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-3xl font-semibold text-gray-600">
-                        {formData.workPlaceName?.charAt(0) || "E"}
+                      <span className="text-3xl font-bold text-white">
+                        {formData.businessName
+                          ? formData.businessName
+                              .split(" ")
+                              .slice(0, 2)
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()
+                          : "E"}
                       </span>
                     )}
                   </div>
@@ -103,27 +245,27 @@ export default function EditEmployerProfile() {
                   </label>
                 </div>
 
-                {/* Company Details */}
+                {/* Business Name & Location */}
                 <div className="flex-grow">
                   <input
                     type="text"
-                    name="workPlaceName"
-                    value={formData.workPlaceName || ""}
+                    name="businessName"
+                    value={formData.businessName}
                     onChange={handleChange}
+                    placeholder="Business Name"
                     className="text-2xl font-semibold text-gray-900 border-b-2 border-blue-600 focus:outline-none mb-3 w-full"
-                    placeholder="Company Name"
                   />
-                  
+
                   <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-gray-600 mb-3">
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-gray-400" />
                       <input
                         type="text"
-                        name="city"
-                        value={formData.city || ""}
+                        name="district"
+                        value={formData.district}
                         onChange={handleChange}
-                        className="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:border-blue-600 text-sm w-full sm:w-auto"
-                        placeholder="City"
+                        className="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:border-blue-600 text-sm w-32"
+                        placeholder="District"
                       />
                     </div>
                     <div className="flex items-center gap-2">
@@ -131,9 +273,9 @@ export default function EditEmployerProfile() {
                       <input
                         type="text"
                         name="state"
-                        value={formData.state || ""}
+                        value={formData.state}
                         onChange={handleChange}
-                        className="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:border-blue-600 text-sm w-full sm:w-auto"
+                        className="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:border-blue-600 text-sm w-32"
                         placeholder="State"
                       />
                     </div>
@@ -141,35 +283,46 @@ export default function EditEmployerProfile() {
                 </div>
               </div>
 
-              {/* Save/Cancel Buttons */}
+              {/* Save / Cancel Buttons */}
               <div className="flex-shrink-0 w-full sm:w-auto">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={handleCancel}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition"
+                    disabled={saving}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X size={16} />
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition"
+                    disabled={saving}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Save size={16} />
-                    Save
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        Save
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Contact Information */}
+          {/* Contact Information Cards */}
           <div className="px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 border-b border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
               Contact Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Phone Number */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
               <div className="bg-white rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center gap-2 mb-2">
                   <Phone size={16} className="text-blue-600" />
@@ -179,75 +332,56 @@ export default function EditEmployerProfile() {
                 </div>
                 <input
                   type="tel"
-                  name="contactNo"
-                  value={formData.contactNo || ""}
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
                   onChange={handleChange}
+                  placeholder="Phone number"
                   className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-sm text-gray-900 font-medium"
                 />
               </div>
 
-              {/* Email */}
               <div className="bg-white rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center gap-2 mb-2">
-                  <Mail size={16} className="text-blue-600" />
+                  <MapPin size={16} className="text-blue-600" />
                   <p className="text-xs text-gray-500 font-semibold uppercase">
-                    Email
+                    Address
                   </p>
                 </div>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email || ""}
+                  type="text"
+                  name="address"
+                  value={formData.address}
                   onChange={handleChange}
+                  placeholder="Full address"
                   className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-sm text-gray-900 font-medium"
                 />
               </div>
+
             </div>
           </div>
 
-          {/* About Section */}
+          {/* About Company Section */}
           <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
-              About Employer
+              About Company
             </h3>
             <textarea
-              name="aboutDescription"
-              value={formData.aboutDescription || ""}
+              name="aboutCompany"
+              value={formData.aboutCompany}
               onChange={handleChange}
-              maxLength={250}
+              maxLength={500}
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:border-blue-600 text-gray-700 resize-none"
               placeholder="Write a brief description about your company..."
             />
             <p className="text-sm text-gray-500 mt-2">
-              {(formData.aboutDescription || "").length}/250 characters
+              {formData.aboutCompany.length}/500 characters
             </p>
+            {error && saving && (
+              <p className="mt-2 text-sm text-red-600">{error}</p>
+            )}
           </div>
 
-          {/* Job Stats Section (Read-only) */}
-          <div className="px-4 sm:px-6 lg:px-8 py-6">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
-              Job Activity Summary
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                <p className="text-sm text-gray-600 font-medium mb-2">
-                  Total Jobs Posted
-                </p>
-                <p className="text-4xl font-semibold text-gray-900">
-                  {formData.jobStats?.totalJobsPosted || 0}
-                </p>
-              </div>
-              <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                <p className="text-sm text-gray-600 font-medium mb-2">
-                  Active Jobs
-                </p>
-                <p className="text-4xl font-semibold text-gray-900">
-                  {formData.jobStats?.activeJobs || 0}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

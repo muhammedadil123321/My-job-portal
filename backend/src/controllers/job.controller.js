@@ -1,21 +1,96 @@
 const Job = require("../models/Job");
 
+
+
+const updateJob = async (req, res) => {
+  try {
+
+    const job = await Job.findById(req.params.id);
+
+    if (!job) {
+      return res.status(404).json({
+        message: "Job not found"
+      });
+    }
+
+    // Optional security check
+    if (job.employer.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Unauthorized"
+      });
+    }
+
+    const updatedJob = await Job.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.status(200).json(updatedJob);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: "Failed to update job",
+      error: error.message
+    });
+
+  }
+};
+// GET EMPLOYER JOBS
+const getEmployerJobs = async (req, res) => {
+
+  try {
+
+    const employerId = req.user.id;
+
+    const jobs = await Job.find({
+
+      employer: employerId
+
+    });
+
+    res.status(200).json(jobs);
+
+  }
+  catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
+
+
+
+
 // ============================
 // CREATE JOB (EMPLOYER)
 // ============================
 const createJob = async (req, res) => {
   try {
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        message: "Unauthorized. Employer ID missing."
+      });
+    }
+
     const job = new Job({
       ...req.body,
-      employer: req.user.id // from JWT
+      employer: req.user.id,
+      jobStatus: "pending"
     });
 
     await job.save();
 
     res.status(201).json({
-      message: "Job created successfully",
+      message: "Job submitted for admin approval",
       job
     });
+
   } catch (error) {
     res.status(500).json({
       message: "Job creation failed",
@@ -23,6 +98,8 @@ const createJob = async (req, res) => {
     });
   }
 };
+
+
 
 // ============================
 // GET ALL JOBS (PUBLIC)
@@ -57,6 +134,17 @@ const getSingleJob = async (req, res) => {
   }
 };
 
+const deleteJob = async (req, res) => {
+
+  const job = await Job.findByIdAndDelete(req.params.id);
+
+  if (!job)
+    return res.status(404).json({ message: "Job not found" });
+
+  res.json({ message: "Job deleted successfully" });
+
+};
+
 // ============================
 // APPLY JOB (STUDENT)
 // ============================
@@ -69,7 +157,7 @@ const applyJob = async (req, res) => {
     }
 
     // prevent duplicate applications
-    if (job.applicants.includes(req.user.id)) {
+if (job.applicants.some(id => id.toString() === req.user.userId)) {
       return res.status(400).json({
         message: "You already applied for this job"
       });
@@ -96,5 +184,8 @@ module.exports = {
   createJob,
   getAllJobs,
   getSingleJob,
-  applyJob
+  applyJob,
+  updateJob,
+  deleteJob,
+getEmployerJobs
 };

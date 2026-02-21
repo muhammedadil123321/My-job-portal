@@ -1,14 +1,14 @@
-const WorkerProfile = require("../models/WorkerProfile");
+const WorkerProfile = require("../models/Workerprofile");
+const User = require("../models/User"); // ✅ ADD THIS
 
 // CREATE or UPDATE worker profile
 exports.saveWorkerProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // from JWT
+    const userId = req.user.id;
 
     const {
       fullName,
       age,
-      email,
       phoneNumber,
       education,
       languages,
@@ -16,32 +16,32 @@ exports.saveWorkerProfile = async (req, res) => {
       city,
       state,
       address,
+      about,
+      profileImage,
     } = req.body;
 
-    // simple validation
+    // Validation
     if (
-      !fullName ||
-      !age ||
-      !email ||
-      !phoneNumber ||
-      !education ||
-      !languages ||
-      !skills ||
-      !city ||
-      !state ||
-      !address
+      !fullName?.trim() ||
+      !phoneNumber?.trim() ||
+      !education?.trim() ||
+      !city?.trim() ||
+      !state?.trim() ||
+      !address?.trim() ||
+      !Array.isArray(languages) || languages.length === 0 ||
+      !Array.isArray(skills) || skills.length === 0 ||
+      !age || age < 18
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // create or update profile
+    // ✅ Update or create WorkerProfile
     const profile = await WorkerProfile.findOneAndUpdate(
       { user: userId },
       {
         user: userId,
         fullName,
         age,
-        email,
         phoneNumber,
         education,
         languages,
@@ -49,19 +49,26 @@ exports.saveWorkerProfile = async (req, res) => {
         city,
         state,
         address,
+        about: about || "",
+        profileImage: profileImage || "",
       },
       { new: true, upsert: true }
     );
 
-    res.status(200).json({
-      message: "Worker profile saved successfully",
-      profile,
+    // ✅ IMPORTANT: Also update User collection
+    await User.findByIdAndUpdate(userId, {
+      name: fullName,
+      profileImage: profileImage || "",
     });
+
+    res.status(200).json(profile);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // GET logged-in user's profile
 exports.getMyWorkerProfile = async (req, res) => {
@@ -73,6 +80,7 @@ exports.getMyWorkerProfile = async (req, res) => {
     }
 
     res.status(200).json(profile);
+
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

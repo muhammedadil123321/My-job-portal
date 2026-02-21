@@ -1,97 +1,120 @@
-import React, { useState } from 'react';
-import { User, AlertCircle, Mail, Phone, MapPin, Save, Calendar, GraduationCap, Briefcase, Plus, X, Globe, Award, Users, ArrowRight } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  User,
+  AlertCircle,
+  Mail,
+  Phone,
+  MapPin,
+  Save,
+  Calendar,
+  GraduationCap,
+  Briefcase,
+  Plus,
+  X,
+  Globe,
+  Award,
+  Users,
+  ArrowRight,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function WorkerProfileForm() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    fullName: '',
-    age: '',
-    email: '',
-    phoneNumber: '',
-    education: '',
+    fullName: user?.name || "",
+    age: "",
+    email: user?.email || "",
+    phoneNumber: "",
+    education: "",
     languages: [],
     skills: [],
-    city: '',
-    state: '',
-    address: ''
+    city: "",
+    state: "",
+    address: "",
   });
 
-  const [currentLanguage, setCurrentLanguage] = useState('');
-  const [currentSkill, setCurrentSkill] = useState('');
+  const [currentLanguage, setCurrentLanguage] = useState("");
+  const [currentSkill, setCurrentSkill] = useState("");
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
   const educationLevels = [
-    'Secondary Education',
-    'Higher Secondary Education',
-    'Advanced Education'
+    "Secondary Education",
+    "Higher Secondary Education",
+    "Advanced Education",
   ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   const handleBlur = (e) => {
     const { name } = e.target;
-    setTouched(prev => ({
+    setTouched((prev) => ({
       ...prev,
-      [name]: true
+      [name]: true,
     }));
   };
 
   const addLanguage = () => {
-    if (currentLanguage.trim() && !formData.languages.includes(currentLanguage.trim())) {
-      setFormData(prev => ({
+    if (
+      currentLanguage.trim() &&
+      !formData.languages.includes(currentLanguage.trim())
+    ) {
+      setFormData((prev) => ({
         ...prev,
-        languages: [...prev.languages, currentLanguage.trim()]
+        languages: [...prev.languages, currentLanguage.trim()],
       }));
-      setCurrentLanguage('');
+      setCurrentLanguage("");
       if (errors.languages) {
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
-          languages: ''
+          languages: "",
         }));
       }
     }
   };
 
   const removeLanguage = (languageToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      languages: prev.languages.filter(lang => lang !== languageToRemove)
+      languages: prev.languages.filter((lang) => lang !== languageToRemove),
     }));
   };
 
   const addSkill = () => {
     if (currentSkill.trim() && !formData.skills.includes(currentSkill.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        skills: [...prev.skills, currentSkill.trim()]
+        skills: [...prev.skills, currentSkill.trim()],
       }));
-      setCurrentSkill('');
+      setCurrentSkill("");
       if (errors.skills) {
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
-          skills: ''
+          skills: "",
         }));
       }
     }
   };
 
   const removeSkill = (skillToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
+      skills: prev.skills.filter((skill) => skill !== skillToRemove),
     }));
   };
 
@@ -99,35 +122,37 @@ export default function WorkerProfileForm() {
     const newErrors = {};
 
     if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Required';
+      newErrors.fullName = "Required";
     } else if (formData.fullName.trim().length < 3) {
-      newErrors.fullName = 'Name must be at least 3 characters';
+      newErrors.fullName = "Name must be at least 3 characters";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Required';
+      newErrors.email = "Required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email';
+      newErrors.email = "Invalid email";
     }
 
     if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Required';
-    } else if (!/^[+]?[\d\s-()]{10,}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
-      newErrors.phoneNumber = 'Invalid phone number';
+      newErrors.phoneNumber = "Required";
+    } else if (
+      !/^[+]?[\d\s-()]{10,}$/.test(formData.phoneNumber.replace(/\s/g, ""))
+    ) {
+      newErrors.phoneNumber = "Invalid phone number";
     }
 
     if (!formData.age) {
-      newErrors.age = 'Required';
+      newErrors.age = "Required";
     } else if (formData.age < 18 || formData.age > 100) {
-      newErrors.age = 'Age must be 18-100';
+      newErrors.age = "Age must be 18-100";
     }
 
     if (!formData.education.trim()) {
-      newErrors.education = 'Required';
+      newErrors.education = "Required";
     }
 
     if (formData.languages.length === 0) {
-      newErrors.languages = 'Add at least one language';
+      newErrors.languages = "Add at least one language";
     }
 
     setErrors(newErrors);
@@ -138,21 +163,21 @@ export default function WorkerProfileForm() {
     const newErrors = {};
 
     if (formData.skills.length === 0) {
-      newErrors.skills = 'Add at least one skill';
+      newErrors.skills = "Add at least one skill";
     }
 
     if (!formData.city.trim()) {
-      newErrors.city = 'Required';
+      newErrors.city = "Required";
     }
 
     if (!formData.state.trim()) {
-      newErrors.state = 'Required';
+      newErrors.state = "Required";
     }
 
     if (!formData.address.trim()) {
-      newErrors.address = 'Required';
+      newErrors.address = "Required";
     } else if (formData.address.trim().length < 10) {
-      newErrors.address = 'Enter complete address';
+      newErrors.address = "Enter complete address";
     }
 
     setErrors(newErrors);
@@ -161,88 +186,129 @@ export default function WorkerProfileForm() {
 
   const handleContinue = () => {
     // Mark step 1 fields as touched
-    const step1Fields = ['fullName', 'email', 'phoneNumber', 'age', 'education', 'languages'];
+    const step1Fields = [
+      "fullName",
+      "email",
+      "phoneNumber",
+      "age",
+      "education",
+      "languages",
+    ];
     const newTouched = {};
-    step1Fields.forEach(field => {
+    step1Fields.forEach((field) => {
       newTouched[field] = true;
     });
-    setTouched(prev => ({ ...prev, ...newTouched }));
+    setTouched((prev) => ({ ...prev, ...newTouched }));
 
     if (validateStep1()) {
       setCurrentStep(2);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Mark step 2 fields as touched
-    const step2Fields = ['skills', 'city', 'state', 'address'];
-    const newTouched = {};
-    step2Fields.forEach(field => {
-      newTouched[field] = true;
-    });
-    setTouched(prev => ({ ...prev, ...newTouched }));
 
-    if (validateStep2()) {
-      console.log('Form submitted:', formData);
-      alert('✓ Worker profile saved successfully! Your profile is pending approval.');
-      setFormData({
-        fullName: '',
-        age: '',
-        email: '',
-        phoneNumber: '',
-        education: '',
-        languages: [],
-        skills: [],
-        city: '',
-        state: '',
-        address: ''
+    // mark touched
+    const step2Fields = ["skills", "city", "state", "address"];
+    const newTouched = {};
+    step2Fields.forEach((f) => (newTouched[f] = true));
+    setTouched((prev) => ({ ...prev, ...newTouched }));
+
+    if (!validateStep2()) return;
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("http://localhost:5001/api/worker-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
       });
-      setErrors({});
-      setTouched({});
-      setCurrentStep(1);
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Failed to save profile");
+        return;
+      }
+
+      alert("Worker profile saved successfully");
+      navigate("/findjob");
+    } catch (err) {
+      alert("Server error");
     }
   };
-
   return (
     <div className="h-screen bg-gradient-to-br px-4 ">
       <div className="max-w-6xl mx-auto pt-10 ">
-        
         {/* Unique Split Layout */}
         <div className="grid lg:grid-cols-5 gap-0 bg-white border-gray-200 border-1 rounded-3xl shadow-lg overflow-hidden">
-          
           {/* Left Sidebar - Brand Section */}
           <div className="lg:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 lg:p-12 text-white relative overflow-hidden">
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
-            
+
             <div className="relative z-10">
               {/* Logo/Icon */}
               <div className="mb-8">
                 <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4">
                   <User size={32} className="text-white" />
                 </div>
-                <h1 className="text-3xl font-bold mb-2">Complete Your Profile</h1>
-                <p className="text-blue-100">Set up your worker profile to find jobs</p>
+                <h1 className="text-3xl font-bold mb-2">
+                  Complete Your Profile
+                </h1>
+                <p className="text-blue-100">
+                  Set up your worker profile to find jobs
+                </p>
               </div>
 
               {/* Progress Indicator */}
               <div className="mb-8">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${currentStep >= 1 ? 'bg-white text-blue-600' : 'bg-white/20 text-white'}`}>
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      currentStep >= 1
+                        ? "bg-white text-blue-600"
+                        : "bg-white/20 text-white"
+                    }`}
+                  >
                     1
                   </div>
-                  <div className={`flex-1 h-1 rounded ${currentStep >= 2 ? 'bg-white' : 'bg-white/20'}`}></div>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${currentStep >= 2 ? 'bg-white text-blue-600' : 'bg-white/20 text-white'}`}>
+                  <div
+                    className={`flex-1 h-1 rounded ${
+                      currentStep >= 2 ? "bg-white" : "bg-white/20"
+                    }`}
+                  ></div>
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      currentStep >= 2
+                        ? "bg-white text-blue-600"
+                        : "bg-white/20 text-white"
+                    }`}
+                  >
                     2
                   </div>
                 </div>
                 <div className="flex justify-between mt-2 text-sm">
-                  <span className={currentStep >= 1 ? 'font-semibold' : 'text-blue-100'}>Personal Info</span>
-                  <span className={currentStep >= 2 ? 'font-semibold' : 'text-blue-100'}>Skills & Location</span>
+                  <span
+                    className={
+                      currentStep >= 1 ? "font-semibold" : "text-blue-100"
+                    }
+                  >
+                    Personal Info
+                  </span>
+                  <span
+                    className={
+                      currentStep >= 2 ? "font-semibold" : "text-blue-100"
+                    }
+                  >
+                    Skills & Location
+                  </span>
                 </div>
               </div>
 
@@ -254,7 +320,9 @@ export default function WorkerProfileForm() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Find Jobs Easily</h3>
-                    <p className="text-sm text-blue-100">Browse and apply for jobs in your area</p>
+                    <p className="text-sm text-blue-100">
+                      Browse and apply for jobs in your area
+                    </p>
                   </div>
                 </div>
 
@@ -263,8 +331,12 @@ export default function WorkerProfileForm() {
                     <Users size={20} />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Connect with Employers</h3>
-                    <p className="text-sm text-blue-100">Get hired by verified companies</p>
+                    <h3 className="font-semibold mb-1">
+                      Connect with Employers
+                    </h3>
+                    <p className="text-sm text-blue-100">
+                      Get hired by verified companies
+                    </p>
                   </div>
                 </div>
 
@@ -274,7 +346,9 @@ export default function WorkerProfileForm() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Build Your Career</h3>
-                    <p className="text-sm text-blue-100">Showcase your skills and experience</p>
+                    <p className="text-sm text-blue-100">
+                      Showcase your skills and experience
+                    </p>
                   </div>
                 </div>
               </div>
@@ -286,82 +360,53 @@ export default function WorkerProfileForm() {
             {/* Form Header */}
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {currentStep === 1 ? 'Personal Information' : 'Skills & Location'}
+                {currentStep === 1
+                  ? "Personal Information"
+                  : "Skills & Location"}
               </h2>
               <p className="text-gray-600">
-                {currentStep === 1 
-                  ? 'Fill in your personal details to get started' 
-                  : 'Add your skills and location to complete your profile'}
+                {currentStep === 1
+                  ? "Fill in your personal details to get started"
+                  : "Add your skills and location to complete your profile"}
               </p>
             </div>
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-8">
-                
                 {/* Step 1: Personal Information */}
                 {currentStep === 1 && (
                   <div>
                     <div className="space-y-5">
                       {/* Row 1: Full Name & Email */}
                       <div className="grid md:grid-cols-2 gap-6">
-                        {/* Full Name */}
+                        {/* Full Name (Display Only) */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Full Name <span className="text-red-500">*</span>
+                            Full Name
                           </label>
-                          <div className="relative group">
-                            <input
-                              type="text"
-                              name="fullName"
-                              value={formData.fullName}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
-                                touched.fullName && errors.fullName
-                                  ? 'border-red-500 bg-red-50'
-                                  : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
-                              }`}
-                              placeholder="e.g., John Doe"
-                            />
+                          <div className="relative">
+                            <div className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-blue-100 text-gray-900">
+                              {formData.fullName || "Not provided"}
+                            </div>
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                               <User size={18} className="text-gray-400" />
                             </div>
                           </div>
-                          {touched.fullName && errors.fullName && (
-                            <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                              <AlertCircle size={12} /> {errors.fullName}
-                            </p>
-                          )}
                         </div>
 
-                        {/* Email */}
+                        {/* Email (Display Only) */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Email Address <span className="text-red-500">*</span>
+                            Email Addres
                           </label>
-                          <div className="relative group">
-                            <input
-                              type="email"
-                              name="email"
-                              value={formData.email}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
-                                touched.email && errors.email
-                                  ? 'border-red-500 bg-red-50'
-                                  : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
-                              }`}
-                              placeholder="john.doe@example.com"
-                            />
+                          <div className="relative">
+                            <div className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-blue-100 text-gray-900">
+                              {formData.email || "Not provided"}
+                            </div>
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                               <Mail size={18} className="text-gray-400" />
                             </div>
                           </div>
-                          {touched.email && errors.email && (
-                            <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                              <AlertCircle size={12} /> {errors.email}
-                            </p>
-                          )}
                         </div>
                       </div>
 
@@ -370,7 +415,8 @@ export default function WorkerProfileForm() {
                         {/* Phone */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Contact Number <span className="text-red-500">*</span>
+                            Contact Number{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <div className="relative group">
                             <input
@@ -381,8 +427,8 @@ export default function WorkerProfileForm() {
                               onBlur={handleBlur}
                               className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
                                 touched.phoneNumber && errors.phoneNumber
-                                  ? 'border-red-500 bg-red-50'
-                                  : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
                               placeholder="+91 XXXXX XXXXX"
                             />
@@ -413,8 +459,8 @@ export default function WorkerProfileForm() {
                               max="100"
                               className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
                                 touched.age && errors.age
-                                  ? 'border-red-500 bg-red-50'
-                                  : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
                               placeholder="e.g., 25"
                             />
@@ -435,7 +481,8 @@ export default function WorkerProfileForm() {
                         {/* Education */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Education Level <span className="text-red-500">*</span>
+                            Education Level{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <div className="relative group">
                             <select
@@ -445,17 +492,22 @@ export default function WorkerProfileForm() {
                               onBlur={handleBlur}
                               className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
                                 touched.education && errors.education
-                                  ? 'border-red-500 bg-red-50'
-                                  : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
                             >
                               <option value="">Select education level</option>
-                              {educationLevels.map(level => (
-                                <option key={level} value={level}>{level}</option>
+                              {educationLevels.map((level) => (
+                                <option key={level} value={level}>
+                                  {level}
+                                </option>
                               ))}
                             </select>
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <GraduationCap size={18} className="text-gray-400" />
+                              <GraduationCap
+                                size={18}
+                                className="text-gray-400"
+                              />
                             </div>
                           </div>
                           {touched.education && errors.education && (
@@ -468,15 +520,21 @@ export default function WorkerProfileForm() {
                         {/* Languages Known */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Languages Known <span className="text-red-500">*</span>
+                            Languages Known{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <div className="flex gap-2">
                             <div className="relative flex-1 group">
                               <input
                                 type="text"
                                 value={currentLanguage}
-                                onChange={(e) => setCurrentLanguage(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLanguage())}
+                                onChange={(e) =>
+                                  setCurrentLanguage(e.target.value)
+                                }
+                                onKeyPress={(e) =>
+                                  e.key === "Enter" &&
+                                  (e.preventDefault(), addLanguage())
+                                }
                                 className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50 group-hover:bg-white transition-all text-gray-900"
                                 placeholder="e.g., English, Hindi"
                               />
@@ -492,7 +550,7 @@ export default function WorkerProfileForm() {
                               <Plus size={18} />
                             </button>
                           </div>
-                          
+
                           {touched.languages && errors.languages && (
                             <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
                               <AlertCircle size={12} /> {errors.languages}
@@ -550,7 +608,10 @@ export default function WorkerProfileForm() {
                               type="text"
                               value={currentSkill}
                               onChange={(e) => setCurrentSkill(e.target.value)}
-                              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                              onKeyPress={(e) =>
+                                e.key === "Enter" &&
+                                (e.preventDefault(), addSkill())
+                              }
                               className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50 group-hover:bg-white transition-all text-gray-900"
                               placeholder="e.g., Carpentry, Plumbing, Electrical"
                             />
@@ -567,7 +628,7 @@ export default function WorkerProfileForm() {
                             Add
                           </button>
                         </div>
-                        
+
                         {formData.skills.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-2">
                             {formData.skills.map((skill, index) => (
@@ -587,7 +648,7 @@ export default function WorkerProfileForm() {
                             ))}
                           </div>
                         )}
-                        
+
                         {touched.skills && errors.skills && (
                           <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
                             <AlertCircle size={12} /> {errors.skills}
@@ -611,8 +672,8 @@ export default function WorkerProfileForm() {
                               onBlur={handleBlur}
                               className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
                                 touched.city && errors.city
-                                  ? 'border-red-500 bg-red-50'
-                                  : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
                               placeholder="e.g., Mumbai"
                             />
@@ -641,8 +702,8 @@ export default function WorkerProfileForm() {
                               onBlur={handleBlur}
                               className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
                                 touched.state && errors.state
-                                  ? 'border-red-500 bg-red-50'
-                                  : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
                               placeholder="e.g., Maharashtra"
                             />
@@ -669,8 +730,8 @@ export default function WorkerProfileForm() {
                             rows={3}
                             className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 resize-none ${
                               touched.address && errors.address
-                                ? 'border-red-500 bg-red-50'
-                                : 'border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white'
+                                ? "border-red-500 bg-red-50"
+                                : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                             }`}
                             placeholder="Street, Area, Landmark, PIN Code"
                           />
@@ -713,7 +774,10 @@ export default function WorkerProfileForm() {
         {/* Bottom Help Text */}
         <div className="text-center mt-6 mb-8">
           <p className="text-gray-600 text-sm">
-            Need assistance? <a href="#" className="text-blue-600 font-semibold hover:underline">Contact Support</a>
+            Need assistance?{" "}
+            <a href="#" className="text-blue-600 font-semibold hover:underline">
+              Contact Support
+            </a>
           </p>
         </div>
       </div>

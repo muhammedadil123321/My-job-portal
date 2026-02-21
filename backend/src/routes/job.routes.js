@@ -8,12 +8,14 @@ const {
   createJob,
   getAllJobs,
   getSingleJob,
-  applyJob
+  applyJob,
+ getEmployerJobs,
+ updateJob,
+ deleteJob
 } = require("../controllers/job.controller");
 
-/**
- * EMPLOYER → create job
- */
+
+// CREATE JOB
 router.post(
   "/",
   authMiddleware,
@@ -21,9 +23,13 @@ router.post(
   createJob
 );
 
-/**
- * STUDENT → apply for job
- */
+
+router.get("/my-jobs", authMiddleware, roleMiddleware("employer"), getEmployerJobs);
+
+
+
+
+// APPLY JOB
 router.post(
   "/:id/apply",
   authMiddleware,
@@ -31,10 +37,21 @@ router.post(
   applyJob
 );
 
-/**
- * PUBLIC → view jobs
- */
+
+// GET ALL ACTIVE JOBS (PUBLIC)
 router.get("/", getAllJobs);
+
+
+// GET SINGLE JOB
 router.get("/:id", getSingleJob);
+
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("employer"),
+  updateJob
+);
+
+router.delete("/:id", authMiddleware, deleteJob);
 
 module.exports = router;

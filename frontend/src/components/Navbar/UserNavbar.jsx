@@ -344,8 +344,18 @@ function UserNavbar() {
                   }}
                   className="flex items-center gap-3 pr-2 py-2 hover:bg-gray-50 rounded-lg transition group"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md overflow-hidden">
+                    {user?.profileImage ? (
+                      <img
+                        src={user.profileImage}
+                        alt={user?.name || "Profile"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>
+                        {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                      </span>
+                    )}
                   </div>
                   <div className="hidden lg:block text-left">
                     <p className="text-sm font-semibold text-gray-900 leading-tight">
@@ -372,8 +382,20 @@ function UserNavbar() {
                       {/* User Info */}
                       <div className="px-4 py-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
-                            {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md overflow-hidden">
+                            {user?.profileImage ? (
+                              <img
+                                src={user.profileImage}
+                                alt={user?.name || "Profile"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span>
+                                {user?.name
+                                  ? user.name.charAt(0).toUpperCase()
+                                  : "U"}
+                              </span>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-gray-900 truncate">
@@ -391,8 +413,8 @@ function UserNavbar() {
                         <NavLink
                           to={
                             role === "student"
-                              ? `/worker/profile/${user?.id}`
-                              : `/employer/profile/${user?.id}`
+                              ? `/worker/profile`
+                              : `/employer/profile`
                           }
                           className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition font-medium"
                           onClick={() => setShowProfileMenu(false)}
@@ -590,8 +612,18 @@ function UserNavbar() {
 
               {/* User Info */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg overflow-hidden">
+                  {user?.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user?.name || "Profile"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>
+                      {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <p className="font-semibold text-white">

@@ -24,6 +24,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", token);
   };
 
+  // Allow updating parts of the user (e.g. after editing worker profile)
+  const updateUser = (partialUser) => {
+    setUser((prev) => {
+      const merged = { ...(prev || {}), ...partialUser };
+      localStorage.setItem("user", JSON.stringify(merged));
+      return merged;
+    });
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -36,9 +45,10 @@ export const AuthProvider = ({ children }) => {
         user,
         token,
         role: user?.role,
-       isAuthenticated: Boolean(user),
+        isAuthenticated: Boolean(user),
         login,
-        logout
+        logout,
+        updateUser,
       }}
     >
       {children}

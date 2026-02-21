@@ -20,10 +20,6 @@ const workerProfileSchema = new mongoose.Schema(
       required: true,
     },
 
-    email: {
-      type: String,
-      required: true,
-    },
 
     phoneNumber: {
       type: String,
@@ -65,7 +61,8 @@ const workerProfileSchema = new mongoose.Schema(
       default: "",
     },
 
-    profile: {
+    // profile image (stored as URL or base64 string)
+    profileImage: {
       type: String,
       default: "",
     },

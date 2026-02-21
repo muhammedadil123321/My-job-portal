@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-// ErrorMessage Component - Defined OUTSIDE the main component
+// ErrorMessage Component
 const ErrorMessage = ({ field, errors }) => {
   return errors[field] ? (
     <div className="flex items-center gap-2 mt-1 text-red-600 text-sm">
@@ -24,11 +24,11 @@ const ErrorMessage = ({ field, errors }) => {
 
 export default function PostJob() {
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     jobTitle: "",
     workPlaceName: "",
     jobType: "",
-    jobShiftType: "",
     workingTimeStart: "",
     workingTimeEnd: "",
     salaryMin: "",
@@ -106,30 +106,22 @@ export default function PostJob() {
     const newErrors = {};
 
     if (currentStep === 1) {
-      if (!formData.workPlaceName.trim()) {
+      if (!formData.workPlaceName.trim())
         newErrors.workPlaceName = "Workplace name is required";
-      }
-      if (!formData.jobTitle.trim()) {
+      if (!formData.jobTitle.trim())
         newErrors.jobTitle = "Job title is required";
-      }
-      if (!formData.jobType) {
+      if (!formData.jobType)
         newErrors.jobType = "Job type is required";
-      }
-      if (!formData.workingTimeStart) {
+      if (!formData.workingTimeStart)
         newErrors.workingTimeStart = "Start time is required";
-      }
-      if (!formData.workingTimeEnd) {
+      if (!formData.workingTimeEnd)
         newErrors.workingTimeEnd = "End time is required";
-      }
-      if (!formData.salaryType) {
+      if (!formData.salaryType)
         newErrors.salaryType = "Payment period is required";
-      }
-      if (!formData.salaryMin) {
+      if (!formData.salaryMin)
         newErrors.salaryMin = "Minimum salary is required";
-      }
-      if (!formData.salaryMax) {
+      if (!formData.salaryMax)
         newErrors.salaryMax = "Maximum salary is required";
-      }
       if (
         formData.salaryMin &&
         formData.salaryMax &&
@@ -141,33 +133,26 @@ export default function PostJob() {
     }
 
     if (currentStep === 2) {
-      if (!formData.jobSummary.trim()) {
+      if (!formData.jobSummary.trim())
         newErrors.jobSummary = "Job summary is required";
-      }
       const filledResponsibilities = formData.responsibilities.filter((r) =>
         r.trim()
       );
-      if (filledResponsibilities.length === 0) {
+      if (filledResponsibilities.length === 0)
         newErrors.responsibilities = "At least one responsibility is required";
-      }
-      if (formData.requiredSkills.length === 0) {
+      if (formData.requiredSkills.length === 0)
         newErrors.requiredSkills = "At least one skill is required";
-      }
     }
 
     if (currentStep === 3) {
-      if (!formData.city.trim()) {
+      if (!formData.city.trim())
         newErrors.city = "City is required";
-      }
-      if (!formData.state.trim()) {
+      if (!formData.state.trim())
         newErrors.state = "State is required";
-      }
-      if (!formData.state.trim()) {
-        newErrors.district = "district is required";
-      }
-      if (!formData.workplaceAddress.trim()) {
+      if (!formData.district.trim())
+        newErrors.district = "District is required";
+      if (!formData.workplaceAddress.trim())
         newErrors.workplaceAddress = "Workplace address is required";
-      }
     }
 
     setErrors(newErrors);
@@ -187,10 +172,85 @@ export default function PostJob() {
     }
   };
 
-  const handleSubmit = () => {
-    if (validateStep(step)) {
-      console.log("Form submitted:", formData);
+  const handleSubmit = async () => {
+    if (!validateStep(step)) return;
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("You are not authorized. Please log in again.");
+      return;
+    }
+
+    // ✅ FLAT payload — every key matches your Mongoose schema exactly
+    // ❌ Before (WRONG): nested objects workingTime:{}, salary:{}, location:{}
+    // ✅ After  (CORRECT): flat fields workingTimeStart, salaryMin, city, etc.
+    const payload = {
+      workPlaceName:    formData.workPlaceName,
+      jobTitle:         formData.jobTitle,
+      jobSummary:       formData.jobSummary,
+      responsibilities: formData.responsibilities.filter((r) => r.trim() !== ""),
+      requiredSkills:   formData.requiredSkills,
+      jobType:          formData.jobType,
+      workingTimeStart: formData.workingTimeStart,
+      workingTimeEnd:   formData.workingTimeEnd,
+      salaryMin:        parseFloat(formData.salaryMin),
+      salaryMax:        parseFloat(formData.salaryMax),
+      salaryType:       formData.salaryType,
+      city:             formData.city,
+      state:            formData.state,
+      district:          formData.district,
+      workplaceAddress: formData.workplaceAddress,
+    };
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch("http://localhost:5001/api/jobs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert("Session expired or unauthorized. Please log in again.");
+          return;
+        }
+        throw new Error(data?.message || "Failed to post job. Please try again.");
+      }
+
       alert("Job posted successfully!");
+
+      // Reset form to initial state
+      setFormData({
+        jobTitle: "",
+        workPlaceName: "",
+        jobType: "",
+        workingTimeStart: "",
+        workingTimeEnd: "",
+        salaryMin: "",
+        salaryMax: "",
+        salaryType: "",
+        jobSummary: "",
+        responsibilities: [""],
+        requiredSkills: [],
+        city: "",
+        state: "",
+        district: "",
+        workplaceAddress: "",
+      });
+      setErrors({});
+      setStep(1);
+    } catch (error) {
+      alert(error.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -294,9 +354,7 @@ export default function PostJob() {
                       value={formData.workPlaceName}
                       onChange={handleChange}
                       className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.workPlaceName
-                          ? "border-red-500"
-                          : "border-gray-300"
+                        errors.workPlaceName ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="e.g. TVS Ltd"
                     />
@@ -355,9 +413,7 @@ export default function PostJob() {
                         value={formData.workingTimeStart}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeStart
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.workingTimeStart ? "border-red-500" : "border-gray-300"
                         }`}
                       />
                       <ErrorMessage field="workingTimeStart" errors={errors} />
@@ -372,9 +428,7 @@ export default function PostJob() {
                         value={formData.workingTimeEnd}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeEnd
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.workingTimeEnd ? "border-red-500" : "border-gray-300"
                         }`}
                       />
                       <ErrorMessage field="workingTimeEnd" errors={errors} />
@@ -396,9 +450,7 @@ export default function PostJob() {
                         value={formData.salaryType}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryType
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.salaryType ? "border-red-500" : "border-gray-300"
                         }`}
                       >
                         <option value="">Select payment period</option>
@@ -418,9 +470,7 @@ export default function PostJob() {
                         value={formData.salaryMin}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMin
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.salaryMin ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
@@ -436,9 +486,7 @@ export default function PostJob() {
                         value={formData.salaryMax}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMax
-                            ? "border-red-500"
-                            : "border-gray-300"
+                          errors.salaryMax ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
@@ -559,9 +607,7 @@ export default function PostJob() {
                   ) : (
                     <div className="text-center py-8 bg-gray-50 rounded-md border border-gray-200">
                       <Target className="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                      <p className="text-gray-500 text-sm">
-                        No skills added yet
-                      </p>
+                      <p className="text-gray-500 text-sm">No skills added yet</p>
                     </div>
                   )}
                 </div>
@@ -588,7 +634,7 @@ export default function PostJob() {
                     />
                     <ErrorMessage field="city" errors={errors} />
                   </div>
-                   <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       District <span className="text-red-500">*</span>
                     </label>
@@ -620,7 +666,6 @@ export default function PostJob() {
                     />
                     <ErrorMessage field="state" errors={errors} />
                   </div>
-                 
                 </div>
 
                 <div>
@@ -633,9 +678,7 @@ export default function PostJob() {
                     onChange={handleChange}
                     rows="3"
                     className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                      errors.workplaceAddress
-                        ? "border-red-500"
-                        : "border-gray-300"
+                      errors.workplaceAddress ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Enter the complete workplace address"
                   />
@@ -669,12 +712,12 @@ export default function PostJob() {
               <button
                 type="button"
                 onClick={prevStep}
+                disabled={step === 1}
                 className={`flex items-center px-5 py-2.5 rounded-md font-medium ${
                   step === 1
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
-                disabled={step === 1}
               >
                 <ChevronLeft className="w-5 h-5 mr-1" />
                 Previous
@@ -693,10 +736,15 @@ export default function PostJob() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="flex items-center px-6 py-2.5 bg-green-600 text-white rounded-md font-medium hover:bg-green-700"
+                  disabled={isLoading}
+                  className={`flex items-center px-6 py-2.5 rounded-md font-medium text-white transition-colors ${
+                    isLoading
+                      ? "bg-green-400 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
                 >
                   <CheckCircle className="w-5 h-5 mr-2" />
-                  Post Job
+                  {isLoading ? "Posting..." : "Post Job"}
                 </button>
               )}
             </div>

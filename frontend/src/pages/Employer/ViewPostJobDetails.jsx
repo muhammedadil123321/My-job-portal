@@ -1,45 +1,59 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   ArrowLeft,
   Briefcase,
   MapPin,
-  DollarSign,
   Clock,
   Calendar,
-  Users,
   CheckCircle,
   IndianRupee,
 } from "lucide-react";
-import { useContext } from "react";
-
 import { useParams, useNavigate } from "react-router-dom";
 import { JobContext } from "../../context/JobContext";
 
 const ViewPostJobDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams();              // id is a plain string from the URL
   const navigate = useNavigate();
-  const jobId = Number(id);
-  const { jobs } = useContext(JobContext);
-  const job = jobs.find((j) => j.id === jobId);
+  const { jobs, fetchJobById } = useContext(JobContext);
+
+  // 1️⃣ Try to find the job in context first (already loaded list)
+  const [job, setJob] = useState(() => jobs.find((j) => j._id === id) || null);
+  const [loading, setLoading] = useState(!job);  // skip loading if already found
+  const [error, setError] = useState(null);
+
+  // 2️⃣ On page refresh or direct URL access, jobs[] may be empty — fetch individually
+  useEffect(() => {
+    if (job) return;  // already found in context, no need to fetch
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        const fetched = await fetchJobById(id);  // API call: GET /api/jobs/:id
+        setJob(fetched);
+      } catch (err) {
+        setError("Job not found or failed to load.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);  // re-run if URL id changes
+
+  // ── Utility helpers ──────────────────────────────────────────────────────────
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case "active":
-        return "bg-green-50 text-green-700 border border-green-300";
-      case "rejected":
-        return "bg-red-50 text-red-700 border border-red-300";
-      case "blocked":
-        return "bg-gray-50 text-gray-700 border border-gray-300";
-      case "pending":
-        return "bg-yellow-50 text-yellow-700 border border-yellow-300";
-      default:
-        return "bg-gray-50 text-gray-700 border border-gray-300";
+      case "active":   return "bg-green-50 text-green-700 border border-green-300";
+      case "rejected": return "bg-red-50 text-red-700 border border-red-300";
+      case "blocked":  return "bg-gray-50 text-gray-700 border border-gray-300";
+      case "pending":  return "bg-yellow-50 text-yellow-700 border border-yellow-300";
+      default:         return "bg-gray-50 text-gray-700 border border-gray-300";
     }
   };
 
-  const getStatusDisplay = (status) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
+  const getStatusDisplay = (status) =>
+    status.charAt(0).toUpperCase() + status.slice(1);
 
   const formatTime = (time) => {
     if (!time) return "-";
@@ -49,18 +63,25 @@ const ViewPostJobDetails = () => {
     return `${hour % 12 || 12}:${m} ${ampm}`;
   };
 
-  const formatSalary = (min, max) => {
-    return `₹${Number(min).toLocaleString("en-IN")} - ₹${Number(
-      max
-    ).toLocaleString("en-IN")}`;
-  };
+  const formatSalary = (min, max) =>
+    `₹${Number(min).toLocaleString("en-IN")} - ₹${Number(max).toLocaleString("en-IN")}`;
 
-  if (!job) {
+  // ── Render states ─────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500 text-sm">Loading job details...</p>
+      </div>
+    );
+  }
+
+  if (error || !job) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Job not found
+            {error || "Job not found"}
           </h2>
           <button
             onClick={() => navigate(-1)}
@@ -72,6 +93,8 @@ const ViewPostJobDetails = () => {
       </div>
     );
   }
+
+  // ── Main render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,14 +111,13 @@ const ViewPostJobDetails = () => {
 
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div className="flex-1">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {job.workPlaceName}
-                </h1>
-                <h1 className="text-xl font-semibold text-gray-900 mb-4">
-                  {job.jobTitle}
-                </h1>
-              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {job.workPlaceName}
+              </h1>
+              <h2 className="text-xl font-semibold text-gray-700 mb-4">
+                {job.jobTitle}
+              </h2>
+
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                 <div
                   className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold ${getStatusStyle(
@@ -135,11 +157,13 @@ const ViewPostJobDetails = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
           {/* Left Column - Main Details */}
           <div className="lg:col-span-2 space-y-6">
+
             {/* Job Summary */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Job Summary
               </h2>
               <p className="text-gray-700 leading-relaxed">{job.jobSummary}</p>
@@ -147,7 +171,7 @@ const ViewPostJobDetails = () => {
 
             {/* Responsibilities */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Key Responsibilities
               </h2>
               <div className="space-y-3">
@@ -164,7 +188,7 @@ const ViewPostJobDetails = () => {
 
             {/* Required Skills */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Required Skills
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -182,10 +206,11 @@ const ViewPostJobDetails = () => {
 
           {/* Right Column - Info Cards */}
           <div className="space-y-6">
-            {/* Compensation */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2 ">
+
+              {/* Salary */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                     <IndianRupee className="w-5 h-5 text-green-600" />
                   </div>
@@ -196,11 +221,12 @@ const ViewPostJobDetails = () => {
                 <p className="text-2xl font-bold text-gray-900 mb-1">
                   {formatSalary(job.salaryMin, job.salaryMax)}
                 </p>
-
                 <p className="text-sm text-gray-600">Per {job.salaryType}</p>
               </div>
-              <div className="mb-4">
-                <div className="flex  items-center gap-2 mb-2">
+
+              {/* Working Hours */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                     <Clock className="w-5 h-5 text-blue-600" />
                   </div>
@@ -208,14 +234,14 @@ const ViewPostJobDetails = () => {
                     Working Hours
                   </h3>
                 </div>
-                <div className="flex flex-col justify-between items-left  ">
-                  <span className="text-sm font-semibold text-gray-900 mb-1">
-                    {formatTime(job.workingTimeStart)} -{" "}
-                    {formatTime(job.workingTimeEnd)}
-                  </span>
-                  <span className="text-sm text-gray-600">Timing</span>
-                </div>
+                <span className="text-sm font-semibold text-gray-900 block mb-1">
+                  {formatTime(job.workingTimeStart)} -{" "}
+                  {formatTime(job.workingTimeEnd)}
+                </span>
+                <span className="text-sm text-gray-600">Timing</span>
               </div>
+
+              {/* Work Location */}
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
@@ -225,7 +251,7 @@ const ViewPostJobDetails = () => {
                     Work Location
                   </h3>
                 </div>
-                <div className="space-y-2 mb-4">
+                <div className="space-y-1 mb-4">
                   <p className="text-sm font-semibold text-gray-900">
                     {job.workplaceAddress}
                   </p>
@@ -234,6 +260,7 @@ const ViewPostJobDetails = () => {
                   </p>
                   <p className="text-sm text-gray-600">{job.country}</p>
                 </div>
+
                 {job.workplaceAddress && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <div className="w-full h-64 bg-gray-100 rounded-md overflow-hidden border border-gray-300">
@@ -257,6 +284,7 @@ const ViewPostJobDetails = () => {
                   </div>
                 )}
               </div>
+
             </div>
           </div>
         </div>
