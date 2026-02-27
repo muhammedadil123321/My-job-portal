@@ -354,22 +354,19 @@ export default function EditPostJob() {
             {step === 1 && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Workplace Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="workPlaceName"
-                      value={formData.workPlaceName}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.workPlaceName ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="e.g. TVS Ltd"
-                    />
-                    <ErrorMessage field="workPlaceName" errors={errors} />
-                  </div>
+                <div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Workplace Name
+  </label>
+
+  <input
+    type="text"
+    value={formData.workPlaceName}
+    readOnly
+    className="w-full px-4 py-2.5 border border-gray-200 rounded-md bg-gray-50 text-gray-900 cursor-not-allowed"
+  />
+
+</div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Job Title <span className="text-red-500">*</span>

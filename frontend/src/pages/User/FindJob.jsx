@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Filter, X, AlertCircle, Loader2,MapPin } from "lucide-react";
+import { Send, Filter, X, AlertCircle, Loader2, MapPin } from "lucide-react";
 import { IndianRupee } from "lucide-react";
 
 const JOB_TYPE_OPTIONS = [
@@ -330,14 +330,26 @@ function FindJob() {
                 >
                   {/* Company Logo Avatar */}
                   <div className="flex items-center justify-between mb-4">
-                    <div
-                      className={`w-10 h-10 sm:w-12 sm:h-12 ${getLogoColor(
-                        job.workPlaceName
-                      )} rounded-xl flex items-center justify-center`}
-                    >
-                      <span className="text-white font-bold text-base sm:text-lg">
-                        {getLogoInitial(job.workPlaceName)}
-                      </span>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center">
+                      {job.employer?.profileImage ? (
+                        // SHOW PROFILE IMAGE
+                        <img
+                          src={job.employer.profileImage}
+                          alt={job.workPlaceName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        // FALLBACK TO INITIAL WITH COLOR
+                        <div
+                          className={`w-full h-full ${getLogoColor(
+                            job.workPlaceName
+                          )} flex items-center justify-center`}
+                        >
+                          <span className="text-white font-bold text-base sm:text-lg">
+                            {getLogoInitial(job.workPlaceName)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -355,7 +367,7 @@ function FindJob() {
                   <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm mb-2">
                     <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
                     <span className="truncate">
-                      {[job.city, job.state].filter(Boolean).join(", ")}
+                      {[job.district, job.state].filter(Boolean).join(", ")}
                     </span>
                   </div>
 

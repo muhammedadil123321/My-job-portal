@@ -31,9 +31,10 @@ export default function WorkerProfileForm() {
     education: "",
     languages: [],
     skills: [],
-    city: "",
+    area: "",
+    district: "",
     state: "",
-    address: "",
+    pincode: "",
   });
 
   const [currentLanguage, setCurrentLanguage] = useState("");
@@ -42,7 +43,6 @@ export default function WorkerProfileForm() {
   const [touched, setTouched] = useState({});
 
   const educationLevels = [
-    "Secondary Education",
     "Higher Secondary Education",
     "Advanced Education",
   ];
@@ -70,20 +70,18 @@ export default function WorkerProfileForm() {
   };
 
   const addLanguage = () => {
-    if (
-      currentLanguage.trim() &&
-      !formData.languages.includes(currentLanguage.trim())
-    ) {
+    const trimmed = currentLanguage.trim();
+    if (!trimmed) return;
+    const formatted =
+      trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    if (!formData.languages.includes(formatted)) {
       setFormData((prev) => ({
         ...prev,
-        languages: [...prev.languages, currentLanguage.trim()],
+        languages: [...prev.languages, formatted],
       }));
       setCurrentLanguage("");
       if (errors.languages) {
-        setErrors((prev) => ({
-          ...prev,
-          languages: "",
-        }));
+        setErrors((prev) => ({ ...prev, languages: "" }));
       }
     }
   };
@@ -96,17 +94,18 @@ export default function WorkerProfileForm() {
   };
 
   const addSkill = () => {
-    if (currentSkill.trim() && !formData.skills.includes(currentSkill.trim())) {
+    const trimmed = currentSkill.trim();
+    if (!trimmed) return;
+    const formatted =
+      trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    if (!formData.skills.includes(formatted)) {
       setFormData((prev) => ({
         ...prev,
-        skills: [...prev.skills, currentSkill.trim()],
+        skills: [...prev.skills, formatted],
       }));
       setCurrentSkill("");
       if (errors.skills) {
-        setErrors((prev) => ({
-          ...prev,
-          skills: "",
-        }));
+        setErrors((prev) => ({ ...prev, skills: "" }));
       }
     }
   };
@@ -135,16 +134,14 @@ export default function WorkerProfileForm() {
 
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = "Required";
-    } else if (
-      !/^[+]?[\d\s-()]{10,}$/.test(formData.phoneNumber.replace(/\s/g, ""))
-    ) {
-      newErrors.phoneNumber = "Invalid phone number";
+    } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Phone number must be exactly 10 digits";
     }
 
     if (!formData.age) {
       newErrors.age = "Required";
-    } else if (formData.age < 18 || formData.age > 100) {
-      newErrors.age = "Age must be 18-100";
+    } else if (formData.age < 18 || formData.age > 30) {
+      newErrors.age = "Age must be between 18 and 30";
     }
 
     if (!formData.education.trim()) {
@@ -166,18 +163,22 @@ export default function WorkerProfileForm() {
       newErrors.skills = "Add at least one skill";
     }
 
-    if (!formData.city.trim()) {
-      newErrors.city = "Required";
+    if (!formData.area.trim()) {
+      newErrors.area = "Required";
+    }
+
+    if (!formData.district.trim()) {
+      newErrors.district = "Required";
     }
 
     if (!formData.state.trim()) {
       newErrors.state = "Required";
     }
 
-    if (!formData.address.trim()) {
-      newErrors.address = "Required";
-    } else if (formData.address.trim().length < 10) {
-      newErrors.address = "Enter complete address";
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = "Required";
+    } else if (!/^\d{6}$/.test(formData.pincode)) {
+      newErrors.pincode = "Pincode must be exactly 6 digits";
     }
 
     setErrors(newErrors);
@@ -185,7 +186,6 @@ export default function WorkerProfileForm() {
   };
 
   const handleContinue = () => {
-    // Mark step 1 fields as touched
     const step1Fields = [
       "fullName",
       "email",
@@ -209,8 +209,7 @@ export default function WorkerProfileForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // mark touched
-    const step2Fields = ["skills", "city", "state", "address"];
+    const step2Fields = ["skills", "area", "district", "state", "pincode"];
     const newTouched = {};
     step2Fields.forEach((f) => (newTouched[f] = true));
     setTouched((prev) => ({ ...prev, ...newTouched }));
@@ -220,16 +219,40 @@ export default function WorkerProfileForm() {
     try {
       const token = localStorage.getItem("token");
 
+      if (!token) {
+        alert("You need to login again.");
+        navigate("/login");
+        return;
+      }
+
+      const payload = {
+        fullName: formData.fullName,
+        age: formData.age,
+        // email is taken from auth user; backend does not store it in WorkerProfile
+        phoneNumber: formData.phoneNumber,
+        education: formData.education,
+        languages: formData.languages,
+        skills: formData.skills,
+        area: formData.area,
+        district: formData.district,
+        state: formData.state,
+        pincode: formData.pincode,
+      };
+
+      console.log("[WorkerProfileForm] Submitting payload:", payload);
+
       const res = await fetch("http://localhost:5001/api/worker-profile", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      console.log("[WorkerProfileForm] Response status:", res.status, "body:", data);
 
       if (!res.ok) {
         alert(data.message || "Failed to save profile");
@@ -239,9 +262,11 @@ export default function WorkerProfileForm() {
       alert("Worker profile saved successfully");
       navigate("/findjob");
     } catch (err) {
+      console.error("[WorkerProfileForm] Server error:", err);
       alert("Server error");
     }
   };
+
   return (
     <div className="h-screen bg-gradient-to-br px-4 ">
       <div className="max-w-6xl mx-auto pt-10 ">
@@ -397,7 +422,7 @@ export default function WorkerProfileForm() {
                         {/* Email (Display Only) */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Email Addres
+                            Email Address
                           </label>
                           <div className="relative">
                             <div className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-blue-100 text-gray-900">
@@ -456,13 +481,13 @@ export default function WorkerProfileForm() {
                               onChange={handleChange}
                               onBlur={handleBlur}
                               min="18"
-                              max="100"
+                              max="30"
                               className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
                                 touched.age && errors.age
                                   ? "border-red-500 bg-red-50"
                                   : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
-                              placeholder="e.g., 25"
+                              placeholder="e.g., 18"
                             />
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                               <Calendar size={18} className="text-gray-400" />
@@ -504,10 +529,7 @@ export default function WorkerProfileForm() {
                               ))}
                             </select>
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <GraduationCap
-                                size={18}
-                                className="text-gray-400"
-                              />
+                              <GraduationCap size={18} className="text-gray-400" />
                             </div>
                           </div>
                           {touched.education && errors.education && (
@@ -600,7 +622,7 @@ export default function WorkerProfileForm() {
                       {/* Row 1: Add Skills */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Your Skills <span className="text-red-500">*</span>
+                          Your Soft Skills <span className="text-red-500">*</span>
                         </label>
                         <div className="flex gap-2 mb-3">
                           <div className="relative flex-1 group">
@@ -613,7 +635,7 @@ export default function WorkerProfileForm() {
                                 (e.preventDefault(), addSkill())
                               }
                               className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50 group-hover:bg-white transition-all text-gray-900"
-                              placeholder="e.g., Carpentry, Plumbing, Electrical"
+                              placeholder="e.g., Communication, Responsibility, Hardworking"
                             />
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                               <Briefcase size={18} className="text-gray-400" />
@@ -656,38 +678,71 @@ export default function WorkerProfileForm() {
                         )}
                       </div>
 
-                      {/* Row 2: City & State */}
+                      {/* Row 2: Area & District */}
                       <div className="grid md:grid-cols-2 gap-6">
-                        {/* City */}
+                        {/* Area */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            City <span className="text-red-500">*</span>
+                            Area <span className="text-red-500">*</span>
                           </label>
                           <div className="relative group">
                             <input
                               type="text"
-                              name="city"
-                              value={formData.city}
+                              name="area"
+                              value={formData.area}
                               onChange={handleChange}
                               onBlur={handleBlur}
                               className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
-                                touched.city && errors.city
+                                touched.area && errors.area
                                   ? "border-red-500 bg-red-50"
                                   : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
-                              placeholder="e.g., Mumbai"
+                              placeholder="Enter Your Area"
                             />
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                               <MapPin size={18} className="text-gray-400" />
                             </div>
                           </div>
-                          {touched.city && errors.city && (
+                          {touched.area && errors.area && (
                             <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                              <AlertCircle size={12} /> {errors.city}
+                              <AlertCircle size={12} /> {errors.area}
                             </p>
                           )}
                         </div>
 
+                        {/* District */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            District <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative group">
+                            <input
+                              type="text"
+                              name="district"
+                              value={formData.district}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
+                                touched.district && errors.district
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
+                              }`}
+                              placeholder="Enter Your District"
+                            />
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                              <MapPin size={18} className="text-gray-400" />
+                            </div>
+                          </div>
+                          {touched.district && errors.district && (
+                            <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                              <AlertCircle size={12} /> {errors.district}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 3: State & Pincode */}
+                      <div className="grid md:grid-cols-2 gap-6">
                         {/* State */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -705,7 +760,7 @@ export default function WorkerProfileForm() {
                                   ? "border-red-500 bg-red-50"
                                   : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
                               }`}
-                              placeholder="e.g., Maharashtra"
+                              placeholder="Enter Your State"
                             />
                           </div>
                           {touched.state && errors.state && (
@@ -714,36 +769,51 @@ export default function WorkerProfileForm() {
                             </p>
                           )}
                         </div>
-                      </div>
 
-                      {/* Row 3: Address */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Address <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative group">
-                          <textarea
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            rows={3}
-                            className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 resize-none ${
-                              touched.address && errors.address
-                                ? "border-red-500 bg-red-50"
-                                : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
-                            }`}
-                            placeholder="Street, Area, Landmark, PIN Code"
-                          />
-                          <div className="absolute top-3.5 right-3 pointer-events-none">
-                            <MapPin size={18} className="text-gray-400" />
+                        {/* Pincode */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Pincode <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative group">
+                            <input
+                              type="text"
+                              name="pincode"
+                              value={formData.pincode}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, "");
+                                if (value.length <= 6) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    pincode: value,
+                                  }));
+                                  if (errors.pincode) {
+                                    setErrors((prev) => ({
+                                      ...prev,
+                                      pincode: "",
+                                    }));
+                                  }
+                                }
+                              }}
+                              onBlur={handleBlur}
+                              className={`w-full px-4 py-2.5 border-2 rounded-xl focus:outline-none transition-all text-gray-900 ${
+                                touched.pincode && errors.pincode
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200 focus:border-blue-500 bg-gray-50 group-hover:bg-white"
+                              }`}
+                              placeholder="e.g., 673001"
+                              maxLength={6}
+                            />
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                              <MapPin size={18} className="text-gray-400" />
+                            </div>
                           </div>
+                          {touched.pincode && errors.pincode && (
+                            <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                              <AlertCircle size={12} /> {errors.pincode}
+                            </p>
+                          )}
                         </div>
-                        {touched.address && errors.address && (
-                          <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                            <AlertCircle size={12} /> {errors.address}
-                          </p>
-                        )}
                       </div>
                     </div>
 

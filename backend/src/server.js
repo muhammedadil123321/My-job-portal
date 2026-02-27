@@ -27,6 +27,7 @@ app.use("/api/jobs", require("./routes/job.routes"));
 app.use("/api/admin", require("./routes/admin.routes"));
 app.use("/api/worker-profile", require("./routes/workerProfile.routes"));
 app.use("/api/employer-profile", require("./routes/employerprofile.routes"));
+app.use("/api/applications", require("./routes/application.routes"));
 
 // 404 handler
 app.use((req, res) => {

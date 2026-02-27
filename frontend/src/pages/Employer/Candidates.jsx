@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Eye,
   Check,
@@ -14,41 +14,116 @@ import {
   Clock,
   GraduationCap,
 } from "lucide-react";
-import { INITIALCANDIDATES } from "../../jobDetails/jobCardDetails";
 import workerAvatar from "../../assets/images/workeravathar.png";
 
 export default function Candidates() {
-  const [applicants, setApplicants] = useState(INITIALCANDIDATES);
+  const [applicants, setApplicants] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedApplicant, setSelectedApplicant] = useState(null);
 
+  useEffect(() => {
+    let interval;
+
+    const fetchApplications = async (showLoader = false) => {
+      try {
+        if (showLoader) setLoading(true);
+
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+          "http://localhost:5001/api/applications/employer",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+          setApplicants(data.applications);
+        }
+      } catch (error) {
+        console.error("Failed to fetch applications:", error);
+      } finally {
+        if (showLoader) setLoading(false);
+      }
+    };
+
+    // First load
+    fetchApplications(true);
+
+    // Auto refresh every 5 seconds
+    interval = setInterval(() => {
+      fetchApplications(false);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleViewProfile = (applicant) => {
     setSelectedApplicant(applicant);
   };
 
-  const handleAccept = (id) => {
-    setApplicants(
-      applicants.map((app) =>
-        app.id === id ? { ...app, status: "accepted" } : app
-      )
-    );
+  const handleAccept = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      await fetch(`http://localhost:5001/api/applications/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status: "accepted",
+        }),
+      });
+
+      setApplicants((prev) =>
+        prev.map((app) =>
+          app._id === id ? { ...app, status: "accepted" } : app
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleReject = (id) => {
-    setApplicants(
-      applicants.map((app) =>
-        app.id === id ? { ...app, status: "rejected" } : app
-      )
-    );
+  const handleReject = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      await fetch(`http://localhost:5001/api/applications/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status: "rejected",
+        }),
+      });
+
+      setApplicants((prev) =>
+        prev.map((app) =>
+          app._id === id ? { ...app, status: "rejected" } : app
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const filteredApplicants = applicants.filter((app) => {
     const matchesSearch =
-      app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.email.toLowerCase().includes(searchTerm.toLowerCase());
+      app.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.job?.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "all" || app.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -67,6 +142,19 @@ export default function Candidates() {
       </span>
     );
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 text-lg font-medium">
+            Loading applicants...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen  py-4 px-8">
@@ -200,19 +288,19 @@ export default function Candidates() {
               <tbody className="divide-y divide-slate-200">
                 {filteredApplicants.map((applicant) => (
                   <tr
-                    key={applicant.id}
+                    key={applicant._id}
                     className="hover:bg-slate-50 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <img
-                          src={applicant.profile || workerAvatar}
-                          alt={applicant.name}
+                          src={applicant.worker?.profileImage || workerAvatar}
+                          alt={applicant.fullName}
                           className="w-12 h-12 rounded-full border-2 border-slate-200"
                         />
                         <div>
                           <div className="font-semibold text-slate-900">
-                            {applicant.name}
+                            {applicant.fullName}
                           </div>
                           <div className="text-sm text-slate-500">
                             {applicant.email}
@@ -222,12 +310,12 @@ export default function Candidates() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-900">
-                        {applicant.position}
+                        {applicant.job?.jobTitle}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-slate-700">
-                        {applicant.appliedDate}
+                        {new Date(applicant.createdAt).toLocaleDateString()}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -248,7 +336,7 @@ export default function Candidates() {
                         {/* APPROVE – hidden only if already accepted */}
                         {applicant.status !== "accepted" && (
                           <button
-                            onClick={() => handleAccept(applicant.id)}
+                            onClick={() => handleAccept(applicant._id)}
                             className="flex-1 lg:flex-none inline-flex items-center justify-center px-2 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-300 rounded-md hover:bg-green-100 transition-colors"
                             title="Approve"
                           >
@@ -262,7 +350,7 @@ export default function Candidates() {
                         {/* REJECT – hidden only if already rejected */}
                         {applicant.status !== "rejected" && (
                           <button
-                            onClick={() => handleReject(applicant.id)}
+                            onClick={() => handleReject(applicant._id)}
                             className="flex-1 lg:flex-none inline-flex items-center justify-center px-2 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-300 rounded-md hover:bg-red-100 transition-colors"
                             title="Reject"
                           >
@@ -309,16 +397,16 @@ export default function Candidates() {
 
               <div className="flex items-center gap-6">
                 <img
-                  src={selectedApplicant.profile || workerAvatar}
-                  alt={selectedApplicant.name}
+                  src={selectedApplicant.worker?.profileImage || workerAvatar}
+                  alt={selectedApplicant.fullName}
                   className="w-24 h-24 rounded-full border-4 border-white shadow-xl"
                 />
                 <div className="text-white">
                   <h2 className="text-3xl font-bold mb-1">
-                    {selectedApplicant.name}
+                    {selectedApplicant.fullName}
                   </h2>
                   <p className="text-blue-100 text-lg mb-3">
-                    {selectedApplicant.city} , {selectedApplicant.state}
+                    {selectedApplicant.district} , {selectedApplicant.state}
                   </p>
                   {getStatusBadge(selectedApplicant.status)}
                 </div>
@@ -339,7 +427,7 @@ export default function Candidates() {
                         Phone Number
                       </label>
                       <p className="text-slate-900 font-semibold">
-                        {selectedApplicant.phone}
+                        {selectedApplicant.phoneNumber}
                       </p>
                     </div>
                   </div>
@@ -371,7 +459,7 @@ export default function Candidates() {
                         Address
                       </label>
                       <p className="text-slate-900 font-semibold text-sm">
-                        {selectedApplicant.address}
+                        {`${selectedApplicant.area}, ${selectedApplicant.district}, ${selectedApplicant.state} - ${selectedApplicant.pincode}`}
                       </p>
                     </div>
                   </div>
@@ -384,10 +472,12 @@ export default function Candidates() {
                     </div>
                     <div>
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block">
-                        Age
+                        Applied Date
                       </label>
                       <p className="text-slate-900 font-semibold">
-                        {selectedApplicant.age} years
+                        {new Date(
+                          selectedApplicant.createdAt
+                        ).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -403,7 +493,9 @@ export default function Candidates() {
                         Language Spoken
                       </label>
                       <p className="text-slate-900 font-semibold">
-                        {selectedApplicant.language}
+                        {Array.isArray(selectedApplicant.languages)
+                          ? selectedApplicant.languages.join(", ")
+                          : selectedApplicant.languages}
                       </p>
                     </div>
                   </div>
@@ -432,7 +524,7 @@ export default function Candidates() {
                   Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {selectedApplicant.skills.map((skill, index) => (
+                  {selectedApplicant.skills?.map((skill, index) => (
                     <span
                       key={index}
                       className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 rounded-lg text-sm font-semibold border border-blue-200"

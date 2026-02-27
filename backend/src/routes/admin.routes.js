@@ -11,7 +11,10 @@ const {
   unblockJob, // added
   deleteJob,
   getPendingJobs,
-  getAllJobsAdmin
+  getAllJobsAdmin,
+  getAllEmployers,
+  getAllWorkers,
+  getWorkerById
 } = require("../controllers/admin.controller");
 
 router.get(
@@ -68,5 +71,25 @@ router.delete(
   deleteJob
 );
 
+router.get(
+  "/employers",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getAllEmployers
+);
+
+router.get(
+  "/workers",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getAllWorkers
+);
+
+router.get(
+  "/workers/:id",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getWorkerById
+);
 
 module.exports = router;

@@ -106,9 +106,22 @@ const createJob = async (req, res) => {
 // ============================
 const getAllJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ jobStatus: "active" });
+
+    const jobs = await Job.find({
+      jobStatus: "active",
+      isActive: true
+    })
+    .populate({
+      path: "employer",
+      select: "profileImage name email"
+    })
+    .sort({ createdAt: -1 });
+
     res.status(200).json(jobs);
+
   } catch (error) {
+    console.error("getAllJobs error:", error);
+
     res.status(500).json({
       message: "Failed to fetch jobs"
     });
@@ -120,13 +133,21 @@ const getAllJobs = async (req, res) => {
 // ============================
 const getSingleJob = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+
+    const job = await Job.findById(req.params.id)
+    .populate({
+      path: "employer",
+      select: "profileImage name email"
+    });
 
     if (!job) {
-      return res.status(404).json({ message: "Job not found" });
+      return res.status(404).json({
+        message: "Job not found"
+      });
     }
 
     res.status(200).json(job);
+
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch job"

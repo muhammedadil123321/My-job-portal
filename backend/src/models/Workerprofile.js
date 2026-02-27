@@ -13,52 +13,69 @@ const workerProfileSchema = new mongoose.Schema(
     fullName: {
       type: String,
       required: true,
+      trim: true,
     },
 
     age: {
       type: Number,
       required: true,
+      min: 18,
+      max: 65,
     },
-
 
     phoneNumber: {
       type: String,
       required: true,
+      trim: true,
     },
 
     education: {
       type: String,
       required: true,
+      trim: true,
     },
 
     languages: {
       type: [String],
       required: true,
+      default: [],
     },
 
     skills: {
       type: [String],
       required: true,
+      default: [],
     },
 
-    city: {
+    // Address broken into structured fields
+    area: {
       type: String,
       required: true,
+      trim: true,
+    },
+
+    district: {
+      type: String,
+      required: true,
+      trim: true,
     },
 
     state: {
       type: String,
       required: true,
+      trim: true,
     },
 
-    address: {
+    pincode: {
       type: String,
       required: true,
+      trim: true,
     },
 
     about: {
       type: String,
       default: "",
+      trim: true,
     },
 
     // profile image (stored as URL or base64 string)

@@ -5,7 +5,6 @@ import {
   Eye,
   Calendar,
   CheckCircle,
-  PauseCircle,
   XCircle,
   Layers,
   Clock,

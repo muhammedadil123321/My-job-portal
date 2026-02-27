@@ -124,6 +124,15 @@ export default function WorkerProfile() {
     return null;
   }
 
+  const addressLocation = [
+    profileData.area,
+    profileData.district,
+    profileData.state,
+  ]
+    .filter(Boolean)
+    .join(", ")
+    .concat(profileData.pincode ? ` - ${profileData.pincode}` : "");
+
   return (
     <div className="min-h-screen pt-28 pb-12 px-4">
       <div className="max-w-5xl mx-auto">
@@ -164,10 +173,10 @@ export default function WorkerProfile() {
                   </h1>
 
                   <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-gray-600 mb-3">
-                    {profileData.city && profileData.state && (
+                    {addressLocation && (
                       <span className="flex items-center gap-2">
                         <MapPin size={18} className="text-gray-400" />
-                        {profileData.city}, {profileData.state}
+                        {addressLocation}
                       </span>
                     )}
                   </div>
@@ -218,7 +227,7 @@ export default function WorkerProfile() {
                   </p>
                 </div>
                 <p className="text-sm text-gray-900 font-medium">
-                  {profileData.address || "N/A"}
+                  {addressLocation || "N/A"}
                 </p>
               </div>
 

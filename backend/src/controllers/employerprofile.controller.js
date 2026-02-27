@@ -1,9 +1,10 @@
-const EmployerProfile = require("../models/EmployerProfile");
+const EmployerProfile = require("../models/Employerprofile");
 const User = require("../models/User");
 
 // CREATE or UPDATE employer profile
 exports.saveEmployerProfile = async (req, res) => {
   try {
+
     const userId = req.user.id;
 
     const {
@@ -25,12 +26,11 @@ exports.saveEmployerProfile = async (req, res) => {
       !address?.trim()
     ) {
       return res.status(400).json({
-        message:
-          "Business name, phone number, district, state, and address are required",
+        message: "Business name, phone number, district, state, and address are required",
       });
     }
 
-    // Save employer profile ONLY
+    // Save EmployerProfile
     const profile = await EmployerProfile.findOneAndUpdate(
       { user: userId },
       {
@@ -49,20 +49,21 @@ exports.saveEmployerProfile = async (req, res) => {
       }
     );
 
-    // Update ONLY profileImage in User collection (NOT name)
-    if (profileImage) {
-      await User.findByIdAndUpdate(userId, {
-        profileImage: profileImage,
-      });
-    }
+    // IMPORTANT FIX: Always update User.profileImage
+    await User.findByIdAndUpdate(userId, {
+      profileImage: profileImage || "",
+    });
 
     res.status(200).json(profile);
 
   } catch (error) {
+
     console.error("Employer profile save error:", error);
+
     res.status(500).json({
       message: "Server error while saving employer profile",
     });
+
   }
 };
 
@@ -70,6 +71,7 @@ exports.saveEmployerProfile = async (req, res) => {
 // GET logged-in employer profile
 exports.getMyEmployerProfile = async (req, res) => {
   try {
+
     const profile = await EmployerProfile.findOne({
       user: req.user.id,
     });
@@ -83,9 +85,12 @@ exports.getMyEmployerProfile = async (req, res) => {
     res.status(200).json(profile);
 
   } catch (error) {
+
     console.error("Employer profile fetch error:", error);
+
     res.status(500).json({
       message: "Server error while fetching employer profile",
     });
+
   }
 };

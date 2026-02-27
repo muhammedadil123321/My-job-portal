@@ -22,9 +22,10 @@ export default function EditWorkerProfile() {
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
-    address: "",
-    city: "",
+    area: "",
+    district: "",
     state: "",
+    pincode: "",
     age: "",
     languages: [],
     skills: [],
@@ -94,9 +95,10 @@ export default function EditWorkerProfile() {
           setFormData({
             fullName: data.fullName || "",
             phoneNumber: data.phoneNumber || "",
-            address: data.address || "",
-            city: data.city || "",
+            area: data.area || "",
+            district: data.district || "",
             state: data.state || "",
+            pincode: data.pincode || "",
             age: data.age || "",
             languages: data.languages || [],
             skills: data.skills || [],
@@ -243,13 +245,14 @@ export default function EditWorkerProfile() {
       }
 
       // Get updated profile from backend
-      const updatedProfile = await response.json();
+   const updatedProfile = await response.json();
 
-      // Sync navbar with updated name/avatar only — email stays in AuthContext from login
-      updateUser({
-        name: updatedProfile.fullName,
-        profileImage: updatedProfile.profileImage,
-      });
+
+
+updateUser({
+  name: updatedProfile.profile.fullName,
+  profileImage: updatedProfile.profile.profileImage,
+});
 
       // Redirect to profile view page on success
       navigate("/worker/profile");
@@ -264,6 +267,16 @@ export default function EditWorkerProfile() {
   const handleCancel = () => {
     navigate("/worker/profile");
   };
+
+  // Computed full address preview
+  const addressPreview = [
+    formData.area,
+    formData.district,
+    formData.state,
+  ]
+    .filter(Boolean)
+    .join(", ")
+    .concat(formData.pincode ? ` - ${formData.pincode}` : "");
 
   // Loading state
   if (loading) {
@@ -354,25 +367,9 @@ export default function EditWorkerProfile() {
                   <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-gray-600 mb-3">
                     <div className="flex items-center gap-2">
                       <MapPin size={18} className="text-gray-400" />
-                      <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        className="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:border-blue-600 text-sm w-32"
-                        placeholder="City"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={18} className="text-gray-400" />
-                      <input
-                        type="text"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleChange}
-                        className="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:border-blue-600 text-sm w-32"
-                        placeholder="State"
-                      />
+                      <span className="text-sm">
+                        {addressPreview || "No address set yet"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -443,14 +440,50 @@ export default function EditWorkerProfile() {
                     Address
                   </p>
                 </div>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Full address"
-                  className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-sm text-gray-900 font-medium"
-                />
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      name="area"
+                      value={formData.area}
+                      onChange={handleChange}
+                      placeholder="Area"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-sm text-gray-900 font-medium"
+                    />
+                    <input
+                      type="text"
+                      name="district"
+                      value={formData.district}
+                      onChange={handleChange}
+                      placeholder="District"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-sm text-gray-900 font-medium"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleChange}
+                      placeholder="State"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-sm text-gray-900 font-medium"
+                    />
+                    <input
+                      type="text"
+                      name="pincode"
+                      value={formData.pincode}
+                      onChange={handleChange}
+                      placeholder="Pincode"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-sm text-gray-900 font-medium"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Full address:&nbsp;
+                    <span className="font-medium text-gray-700">
+                      {addressPreview || "Will be generated from the above fields"}
+                    </span>
+                  </p>
+                </div>
               </div>
 
               {/* Age */}

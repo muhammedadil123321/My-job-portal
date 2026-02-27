@@ -27,10 +27,23 @@ export default function SignUp() {
     password: "",
   });
 
+  const capitalizeFullName = (value) => {
+    return value.replace(/\b\w/g, (char) => char.toUpperCase());
+  };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear error when user starts typing
+
+    let formattedValue = value;
+
+    if (name === "fullName") {
+      formattedValue = capitalizeFullName(value);
+    }
+
+    setFormData({
+      ...formData,
+      [name]: formattedValue,
+    });
+
     if (error) setError("");
   };
 
@@ -70,60 +83,59 @@ export default function SignUp() {
   };
 
   const handleSignup = async (e) => {
-  e.preventDefault();
-  setError("");
+    e.preventDefault();
+    setError("");
 
-  if (!validateForm()) return;
-  setLoading(true);
+    if (!validateForm()) return;
+    setLoading(true);
 
-  try {
-    // 1️⃣ Register
-    await axios.post("http://localhost:5001/api/auth/register", {
-      name: formData.fullName.trim(),
-      email: formData.email.trim(),
-      password: formData.password,
-      role,
-    });
-
-    // 2️⃣ Login
-    const loginResponse = await axios.post(
-      "http://localhost:5001/api/auth/login",
-      {
+    try {
+      // 1️⃣ Register
+      await axios.post("http://localhost:5001/api/auth/register", {
+        name: formData.fullName.trim(),
         email: formData.email.trim(),
         password: formData.password,
+        role,
+      });
+
+      // 2️⃣ Login
+      const loginResponse = await axios.post(
+        "http://localhost:5001/api/auth/login",
+        {
+          email: formData.email.trim(),
+          password: formData.password,
+        }
+      );
+
+      // ✅ FIXED HERE
+      const { user: loggedInUser, token } = loginResponse.data;
+
+      // 3️⃣ Update auth context
+      login(loggedInUser, token);
+
+      // 4️⃣ Clear form
+      setFormData({ fullName: "", email: "", password: "" });
+
+      // 5️⃣ Navigate to PROFILE FORM ONLY
+      if (loggedInUser.role === "student") {
+        navigate("/worker/profile-form");
+      } else if (loggedInUser.role === "employer") {
+        navigate("/employer/profile-form");
+      } else {
+        navigate("/");
       }
-    );
-
-    // ✅ FIXED HERE
-    const { user: loggedInUser, token } = loginResponse.data;
-
-    // 3️⃣ Update auth context
-    login(loggedInUser, token);
-
-    // 4️⃣ Clear form
-    setFormData({ fullName: "", email: "", password: "" });
-
-    // 5️⃣ Navigate to PROFILE FORM ONLY
-    if (loggedInUser.role === "student") {
-      navigate("/worker/profile-form");
-    } else if (loggedInUser.role === "employer") {
-      navigate("/employer/profile-form");
-    } else {
-      navigate("/");
+    } catch (error) {
+      if (error.response) {
+        setError(error.response.data?.message || "Registration failed");
+      } else if (error.request) {
+        setError("No response from server");
+      } else {
+        setError("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    if (error.response) {
-      setError(error.response.data?.message || "Registration failed");
-    } else if (error.request) {
-      setError("No response from server");
-    } else {
-      setError("Something went wrong");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center p-4">

@@ -19,10 +19,10 @@ import About from "./pages/User/About";
 import FindJob from "./pages/User/FindJob";
 import SavedJobs from "./pages/User/SavedJobs";
 
-/* Auth Pages */
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
 import ViewJobDetails from "./pages/User/ViewJobDetails";
+import ReviewApplication from "./pages/User/ReviewApplication";
 
 import EmployerDashboard from "./pages/Employer/EmployerDashboard";
 import PostJob from "./pages/Employer/PostJob";
@@ -44,6 +44,8 @@ import WorkerManagement from "./pages/Admin/WorkerManagement";
 import EmployerManagement from "./pages/Admin/EmployerManagement";
 import AdminViewPostJob from "./pages/Admin/AdminViewPostJob";
 import AdminViewProfile from "./pages/Admin/AdminViewProfile";
+import ApplicationHistory from "./pages/User/ApplicationHistory";
+import ViewHistoryJobDetail from "./pages/User/ViewHistoryJobDetail";
 
 // When logged in → redirect "/" to "/findjob"
 // When logged out → show normal Home page
@@ -124,27 +126,60 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/review-application/:id"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <ReviewApplication />
+              </ProtectedRoute>
+            }
+          />
+
+           <Route
+            path="/worker/applications"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <ApplicationHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/worker/applications/:id"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <ViewHistoryJobDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          
         </Route>
 
         <Route path="/worker/profile-form" element={<WorkerProfileForm />} />
         {/* STANDALONE EMPLOYER PROFILE FORM (no layout) */}
         <Route path="/employer/profile-form" element={<ProfileForm />} />
 
-        {/* Emplyer ROUTES (with navbar/footer) */}
-        <Route path="/employer" element={<EmployerLayout />}>
+        <Route
+          path="/employer"
+          element={
+            <ProtectedRoute allowedRoles={["employer"]}>
+              <EmployerLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<EmployerDashboard />} />
           <Route path="post-job" element={<PostJob />} />
           <Route path="manage-jobs" element={<ManageJobs />} />
           <Route path="applicants" element={<Candidates />} />
           <Route path="profile" element={<EmployerProfile />} />
           <Route path="profile/edit" element={<EditEmployerProfile />} />
-          {/* <Route path="/employer/manage-jobs/view-job/:id" element={<ViewPostJobDetails/>} /> */}
           <Route
             path="manage-jobs/view-job/:id"
             element={<ViewPostJobDetails />}
           />
           <Route path="manage-jobs/edit-job/:id" element={<EditPostJob />} />
-          {/* Unknown employer sub-routes should show 404 (not 403) */}
           <Route path="*" element={<NotFound />} />
         </Route>
 

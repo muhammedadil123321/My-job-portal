@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+
+  
   password: {
     type: String,
     required: true,
@@ -18,7 +20,7 @@ const userSchema = new mongoose.Schema({
     enum: ['student', 'employer', 'admin'],
     required: true,
   },
-  profileImage: {        // ✅ ADD THIS
+  profileImage: {       
     type: String,
     default: "",
   },
