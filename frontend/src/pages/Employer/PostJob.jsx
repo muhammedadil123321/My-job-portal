@@ -10,8 +10,44 @@ import {
   Plus,
   Target,
   AlertCircle,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+const LocationMarker = ({ position, setPosition }) => {
+  useMapEvents({
+    click(e) {
+      setPosition({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+
+  return position === null ? null : (
+    <Marker position={[position.lat, position.lng]}></Marker>
+  );
+};
+
+const ChangeMapView = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
+};
 
 // ErrorMessage Component
 const ErrorMessage = ({ field, errors }) => {
@@ -49,6 +85,54 @@ export default function PostJob() {
 
   const [currentSkill, setCurrentSkill] = useState("");
   const [errors, setErrors] = useState({});
+
+  const [mapCenter, setMapCenter] = useState([10.8505, 76.2711]); // Kerala default
+  const [isSearchingMap, setIsSearchingMap] = useState(false);
+
+  const searchLocationOnMap = async () => {
+    const addressToSearch = formData.workplaceAddress || `${formData.city}, ${formData.district}, ${formData.state}`;
+    if (!addressToSearch.trim()) return;
+
+    setIsSearchingMap(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          addressToSearch
+        )}&format=json&limit=1`,
+        {
+          headers: {
+            "User-Agent": "JobPortal-App/1.0",
+          },
+        }
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        setMapCenter([lat, lon]);
+        setFormData((prev) => ({
+          ...prev,
+          latitude: lat,
+          longitude: lon
+        }));
+      } else {
+        alert("Could not find this specific address on the map. Please select it manually by clicking on the map.");
+      }
+    } catch (error) {
+      console.error("Map search error:", error);
+      alert("Error searching map. Please select manually by clicking on the map.");
+    } finally {
+      setIsSearchingMap(false);
+    }
+  };
+
+  const handleMapClick = (pos) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: pos.lat,
+      longitude: pos.lng
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -154,6 +238,9 @@ export default function PostJob() {
         newErrors.district = "District is required";
       if (!formData.workplaceAddress.trim())
         newErrors.workplaceAddress = "Workplace address is required";
+      if (!formData.latitude || !formData.longitude) {
+        newErrors.map = "Please select the exact location on the map.";
+      }
     }
 
     setErrors(newErrors);
@@ -183,7 +270,7 @@ export default function PostJob() {
       return;
     }
 
-   
+
 
     // 🔥 NOW CREATE PAYLOAD
     const payload = {
@@ -204,8 +291,8 @@ export default function PostJob() {
       state: formData.state,
       district: formData.district,
       workplaceAddress: formData.workplaceAddress,
-
-      
+      latitude: formData.latitude,
+      longitude: formData.longitude,
     };
 
     try {
@@ -233,8 +320,8 @@ export default function PostJob() {
       setIsLoading(false);
     }
 
-    
-  
+
+
   };
 
   const steps = [
@@ -307,11 +394,10 @@ export default function PostJob() {
                 <React.Fragment key={s.number}>
                   <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
-                        step >= s.number
-                          ? "bg-blue-600 border-blue-600 text-white"
-                          : "bg-white border-gray-300 text-gray-400"
-                      }`}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${step >= s.number
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "bg-white border-gray-300 text-gray-400"
+                        }`}
                     >
                       {step > s.number ? (
                         <CheckCircle className="w-6 h-6" />
@@ -320,18 +406,16 @@ export default function PostJob() {
                       )}
                     </div>
                     <p
-                      className={`mt-2 text-sm font-medium ${
-                        step >= s.number ? "text-gray-900" : "text-gray-500"
-                      }`}
+                      className={`mt-2 text-sm font-medium ${step >= s.number ? "text-gray-900" : "text-gray-500"
+                        }`}
                     >
                       {s.title}
                     </p>
                   </div>
                   {idx < steps.length - 1 && (
                     <div
-                      className={`flex-1 h-0.5 mx-4 transition-all ${
-                        step > s.number ? "bg-blue-600" : "bg-gray-300"
-                      }`}
+                      className={`flex-1 h-0.5 mx-4 transition-all ${step > s.number ? "bg-blue-600" : "bg-gray-300"
+                        }`}
                       style={{ maxWidth: "120px" }}
                     />
                   )}
@@ -374,9 +458,8 @@ export default function PostJob() {
                       name="jobTitle"
                       value={formData.jobTitle}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.jobTitle ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.jobTitle ? "border-red-500" : "border-gray-300"
+                        }`}
                       placeholder="e.g. Delivery Boy"
                     />
                     <ErrorMessage field="jobTitle" errors={errors} />
@@ -396,9 +479,8 @@ export default function PostJob() {
                         name="jobType"
                         value={formData.jobType}
                         onChange={handleChange}
-                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.jobType ? "border-red-500" : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.jobType ? "border-red-500" : "border-gray-300"
+                          }`}
                       >
                         <option value="">Select job type</option>
                         <option value="part-time">Part-time</option>
@@ -417,11 +499,10 @@ export default function PostJob() {
                         name="workingTimeStart"
                         value={formData.workingTimeStart}
                         onChange={handleChange}
-                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeStart
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.workingTimeStart
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          }`}
                       />
                       <ErrorMessage field="workingTimeStart" errors={errors} />
                     </div>
@@ -434,11 +515,10 @@ export default function PostJob() {
                         name="workingTimeEnd"
                         value={formData.workingTimeEnd}
                         onChange={handleChange}
-                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeEnd
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.workingTimeEnd
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          }`}
                       />
                       <ErrorMessage field="workingTimeEnd" errors={errors} />
                     </div>
@@ -458,11 +538,10 @@ export default function PostJob() {
                         name="salaryType"
                         value={formData.salaryType}
                         onChange={handleChange}
-                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryType
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.salaryType
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          }`}
                       >
                         <option value="">Select payment period</option>
                         <option value="monthly">Monthly</option>
@@ -480,11 +559,10 @@ export default function PostJob() {
                         name="salaryMin"
                         value={formData.salaryMin}
                         onChange={handleChange}
-                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMin
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.salaryMin
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
                       <ErrorMessage field="salaryMin" errors={errors} />
@@ -498,11 +576,10 @@ export default function PostJob() {
                         name="salaryMax"
                         value={formData.salaryMax}
                         onChange={handleChange}
-                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMax
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.salaryMax
+                          ? "border-red-500"
+                          : "border-gray-300"
+                          }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
                       <ErrorMessage field="salaryMax" errors={errors} />
@@ -524,9 +601,8 @@ export default function PostJob() {
                     value={formData.jobSummary}
                     onChange={handleChange}
                     rows="5"
-                    className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                      errors.jobSummary ? "border-red-500" : "border-gray-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${errors.jobSummary ? "border-red-500" : "border-gray-300"
+                      }`}
                     placeholder="Provide a comprehensive overview of the position..."
                   />
                   <ErrorMessage field="jobSummary" errors={errors} />
@@ -644,9 +720,8 @@ export default function PostJob() {
                       name="city"
                       value={formData.city}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.city ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.city ? "border-red-500" : "border-gray-300"
+                        }`}
                       placeholder="e.g. San Francisco"
                     />
                     <ErrorMessage field="city" errors={errors} />
@@ -660,9 +735,8 @@ export default function PostJob() {
                       name="district"
                       value={formData.district}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.district ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.district ? "border-red-500" : "border-gray-300"
+                        }`}
                       placeholder="e.g. Ernakulam"
                     />
                     <ErrorMessage field="district" errors={errors} />
@@ -676,9 +750,8 @@ export default function PostJob() {
                       name="state"
                       value={formData.state}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.state ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.state ? "border-red-500" : "border-gray-300"
+                        }`}
                       placeholder="e.g. California"
                     />
                     <ErrorMessage field="state" errors={errors} />
@@ -694,11 +767,10 @@ export default function PostJob() {
                     value={formData.workplaceAddress}
                     onChange={handleChange}
                     rows="3"
-                    className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                      errors.workplaceAddress
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    }`}
+                    className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${errors.workplaceAddress
+                      ? "border-red-500"
+                      : "border-gray-300"
+                      }`}
                     placeholder="Enter the complete workplace address"
                   />
                   <ErrorMessage field="workplaceAddress" errors={errors} />
@@ -706,21 +778,44 @@ export default function PostJob() {
 
                 {formData.workplaceAddress && (
                   <div className="border-t border-gray-200 pt-6">
-                    <label className="block text-sm font-medium text-gray-900 mb-3">
-                      Location Preview
-                    </label>
-                    <div className="w-full h-80 bg-gray-100 rounded-md overflow-hidden border border-gray-300">
-                      <iframe
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                          formData.workplaceAddress
-                        )}&output=embed`}
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        title="Job Location Map"
-                      />
+                    <div className="flex justify-between items-center mb-3">
+                      <label className="block text-sm font-medium text-gray-900">
+                        Location Preview (Click map to set pin)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={searchLocationOnMap}
+                        disabled={isSearchingMap}
+                        className="flex items-center text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
+                      >
+                        <Search className="w-4 h-4 mr-1" />
+                        {isSearchingMap ? "Searching..." : "Search on Map"}
+                      </button>
                     </div>
+                    {formData.latitude && formData.longitude && (
+                      <p className="text-xs text-green-600 mb-2 font-medium">
+                        Exact Location Selected: {parseFloat(formData.latitude).toFixed(4)}, {parseFloat(formData.longitude).toFixed(4)}
+                      </p>
+                    )}
+                    <div className={`w-full h-80 bg-gray-100 rounded-md overflow-hidden border ${errors.map ? "border-red-500" : "border-gray-300"} z-0 relative`}>
+                      <MapContainer
+                        center={mapCenter}
+                        zoom={13}
+                        scrollWheelZoom={true}
+                        style={{ height: "100%", width: "100%", zIndex: 0 }}
+                      >
+                        <ChangeMapView center={mapCenter} />
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <LocationMarker
+                          position={formData.latitude ? { lat: formData.latitude, lng: formData.longitude } : null}
+                          setPosition={handleMapClick}
+                        />
+                      </MapContainer>
+                    </div>
+                    <ErrorMessage field="map" errors={errors} />
                   </div>
                 )}
               </div>
@@ -732,11 +827,10 @@ export default function PostJob() {
                 type="button"
                 onClick={prevStep}
                 disabled={step === 1}
-                className={`flex items-center px-5 py-2.5 rounded-md font-medium ${
-                  step === 1
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center px-5 py-2.5 rounded-md font-medium ${step === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <ChevronLeft className="w-5 h-5 mr-1" />
                 Previous
@@ -756,11 +850,10 @@ export default function PostJob() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className={`flex items-center px-6 py-2.5 rounded-md font-medium text-white transition-colors ${
-                    isLoading
-                      ? "bg-green-400 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
+                  className={`flex items-center px-6 py-2.5 rounded-md font-medium text-white transition-colors ${isLoading
+                    ? "bg-green-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
+                    }`}
                 >
                   <CheckCircle className="w-5 h-5 mr-2" />
                   {isLoading ? "Posting..." : "Post Job"}

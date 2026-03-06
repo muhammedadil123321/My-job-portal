@@ -58,7 +58,7 @@ const createJob = async (req, res) => {
       });
     }
 
-    const { workplaceAddress, ...otherFields } = req.body;
+    const { workplaceAddress, latitude, longitude, ...otherFields } = req.body;
 
     if (!workplaceAddress) {
       return res.status(400).json({
@@ -66,42 +66,13 @@ const createJob = async (req, res) => {
       });
     }
 
-    let coordinates;
-
-    // 🔥 Convert address to coordinates using OpenStreetMap
-    try {
-      const geoResponse = await axios.get(
-        "https://nominatim.openstreetmap.org/search",
-        {
-          params: {
-            q: workplaceAddress,
-            format: "json",
-            limit: 1,
-          },
-          headers: {
-            // Nominatim STRICTLY requires a valid User-Agent
-            "User-Agent": "JobPortal-App/1.0",
-          },
-          timeout: 5000,
-        }
-      );
-
-      if (!geoResponse.data || geoResponse.data.length === 0) {
-        return res.status(400).json({
-          message: "Could not find map coordinates for the provided address. Please provide a more specific address.",
-        });
-      }
-
-      const latitude = parseFloat(geoResponse.data[0].lat);
-      const longitude = parseFloat(geoResponse.data[0].lon);
-      coordinates = [longitude, latitude]; // longitude FIRST
-
-    } catch (geoError) {
-      console.error("Geocoding Service Error:", geoError.message);
-      return res.status(503).json({
-        message: "Address validation service (Map) is currently unavailable or the address could not be resolved. Please try again."
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        message: "Please select your exact location on the map (latitude and longitude are required).",
       });
     }
+
+    let coordinates = [parseFloat(longitude), parseFloat(latitude)]; // longitude FIRST for GeoJSON
 
     const job = new Job({
       ...otherFields,
