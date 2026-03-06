@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Send, Filter, X, AlertCircle, Loader2, MapPin } from "lucide-react";
 import { IndianRupee } from "lucide-react";
+import axios from "axios";
 
 const JOB_TYPE_OPTIONS = [
   { label: "Part-time", value: "part-time" },
@@ -19,36 +20,38 @@ function FindJob() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [userLocation, setUserLocation] = useState(null);
 
   const navigate = useNavigate();
 
   // Fetch jobs from backend on component mount
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      return;
+    }
 
-        const response = await fetch("http://localhost:5001/api/jobs");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch jobs: ${response.status} ${response.statusText}`
-          );
-        }
+        setUserLocation({ lat, lng });
 
-        const data = await response.json();
-        setJobs(data);
-        setFilteredJobs(data);
-      } catch (err) {
-        console.error("Error fetching jobs:", err);
-        setError(err.message || "Something went wrong while fetching jobs.");
-      } finally {
-        setLoading(false);
+        // default load = 20km
+        fetchNearbyJobs(lat, lng, 500000); // 500km for testing
+      },
+      () => {
+        // fallback if user denies location
+        fetch("http://localhost:5001/api/jobs")
+          .then((res) => res.json())
+          .then((data) => {
+            setJobs(data);
+            setFilteredJobs(data);
+            setLoading(false);
+          });
       }
-    };
-
-    fetchJobs();
+    );
   }, []);
 
   // ── Apply Filters — runs ONLY when Apply Filters / Search button is clicked ───
@@ -72,19 +75,6 @@ function FindJob() {
       result = result.filter(
         (job) => job.jobType?.toLowerCase() === selectedJobType.toLowerCase()
       );
-    }
-
-    // Distance filter
-    if (selectedDistance) {
-      result = result.filter((job) => {
-        const d = job.distance;
-        if (d === undefined || d === null) return false;
-        if (selectedDistance === "0-5") return d <= 5;
-        if (selectedDistance === "5-10") return d > 5 && d <= 10;
-        if (selectedDistance === "10-20") return d > 10 && d <= 20;
-        if (selectedDistance === "20+") return d > 20;
-        return true;
-      });
     }
 
     setFilteredJobs(result);
@@ -118,8 +108,22 @@ function FindJob() {
     setSelectedJobType((prev) => (prev === value ? null : value));
   };
 
-  const handleDistanceChange = (distance) => {
-    setSelectedDistance((prev) => (prev === distance ? null : distance));
+  const handleDistanceChange = (range) => {
+    const newValue = selectedDistance === range ? null : range;
+    setSelectedDistance(newValue);
+
+    if (!userLocation) return;
+
+    const distanceMap = {
+      "0-5": 5000,
+      "5-10": 10000,
+      "10-20": 20000,
+      "20+": 50000,
+    };
+
+    const maxDistance = newValue ? distanceMap[newValue] : 20000;
+
+    fetchNearbyJobs(userLocation.lat, userLocation.lng, maxDistance);
   };
 
   const clearAllFilters = () => {
@@ -134,6 +138,32 @@ function FindJob() {
     navigate(`/view-job/${jobId}`);
   };
 
+  const fetchNearbyJobs = async (lat, lng, maxDistance) => {
+    try {
+      setLoading(true);
+
+      const response = await axios.get(
+        "http://localhost:5001/api/jobs/nearby",
+        {
+          params: {
+            latitude: lat,
+            longitude: lng,
+            maxDistance: maxDistance,
+          },
+        }
+      );
+
+      setJobs(response.data);
+      setFilteredJobs(response.data);
+
+      console.log("Student location:", lat, lng);
+      console.log("Jobs returned:", response.data);
+    } catch (err) {
+      setError("Failed to fetch nearby jobs");
+    } finally {
+      setLoading(false);
+    }
+  };
   const getLogoColor = (name = "") => {
     const colors = [
       "bg-blue-500",
@@ -288,7 +318,7 @@ function FindJob() {
           {/* Results Count + Search Bar */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pb-6">
             <p className="text-xs sm:text-sm text-gray-900 bg-gray-50 w-fit px-3 py-2.5 rounded-sm shadow-sm font-medium whitespace-nowrap">
-              Available <span className="font-bold">{filteredJobs.length}</span>{" "}
+              Available<span className="font-bold">{filteredJobs.length}</span>{" "}
               jobs
             </p>
 
@@ -374,7 +404,10 @@ function FindJob() {
                   {/* Distance (only shown if available) */}
                   {job.distance !== undefined && (
                     <div className="flex items-center gap-2 text-blue-600 text-xs sm:text-sm mb-2 font-medium">
-                      📍 {job.distance} km away
+                      📍{" "}
+                      {job.distance < 1000
+                        ? `${Math.round(job.distance)} m away`
+                        : `${(job.distance / 1000).toFixed(1)} km away`}
                     </div>
                   )}
 

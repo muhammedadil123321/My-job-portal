@@ -14,7 +14,8 @@ const {
   getAllJobsAdmin,
   getAllEmployers,
   getAllWorkers,
-  getWorkerById
+  getWorkerById,
+  getDashboardStats
 } = require("../controllers/admin.controller");
 
 router.get(
@@ -90,6 +91,13 @@ router.get(
   authMiddleware,
   roleMiddleware("admin"),
   getWorkerById
+);
+
+router.get(
+  "/dashboard",
+  authMiddleware,
+  roleMiddleware("admin"),
+  getDashboardStats
 );
 
 module.exports = router;

@@ -382,6 +382,36 @@ const getWorkerById = async (req, res) => {
   }
 };
 
+const getDashboardStats = async (req, res) => {
+  try {
+    const totalEmployers = await User.countDocuments({ role: "employer" });
+    const totalWorkers = await User.countDocuments({ role: "student" });
+    const totalJobs = await Job.countDocuments();
+
+    const pendingJobs = await Job.countDocuments({ jobStatus: "pending" });
+    const activeJobs = await Job.countDocuments({ jobStatus: "active" });
+    const rejectedJobs = await Job.countDocuments({ jobStatus: "rejected" });
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalEmployers,
+        totalWorkers,
+        totalJobs,
+        pendingJobs,
+        activeJobs,
+        rejectedJobs
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllJobsAdmin,
   getAllEmployers,
@@ -393,4 +423,5 @@ module.exports = {
   deleteJob,
   getAllWorkers,
   getWorkerById,
+  getDashboardStats
 };

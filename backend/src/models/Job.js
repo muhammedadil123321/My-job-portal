@@ -54,8 +54,15 @@ const jobSchema = new mongoose.Schema(
     workplaceAddress: String,
 
     location: {
-      latitude: Number,
-      longitude: Number,
+      type: {
+        type: String,
+        enum: ["Point"],
+        required: true,
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+      },
     },
 
     employer: {
@@ -74,9 +81,11 @@ const jobSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-
   },
   { timestamps: true }
 );
+
+/* 🔥 ADD THIS LINE */
+jobSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("Job", jobSchema);

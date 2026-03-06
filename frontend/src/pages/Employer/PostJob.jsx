@@ -11,6 +11,7 @@ import {
   Target,
   AlertCircle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // ErrorMessage Component
 const ErrorMessage = ({ field, errors }) => {
@@ -25,6 +26,7 @@ const ErrorMessage = ({ field, errors }) => {
 export default function PostJob() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     jobTitle: "",
     workPlaceName: "",
@@ -41,6 +43,8 @@ export default function PostJob() {
     state: "",
     district: "",
     workplaceAddress: "",
+    latitude: "",
+    longitude: "",
   });
 
   const [currentSkill, setCurrentSkill] = useState("");
@@ -110,8 +114,7 @@ export default function PostJob() {
         newErrors.workPlaceName = "Workplace name is required";
       if (!formData.jobTitle.trim())
         newErrors.jobTitle = "Job title is required";
-      if (!formData.jobType)
-        newErrors.jobType = "Job type is required";
+      if (!formData.jobType) newErrors.jobType = "Job type is required";
       if (!formData.workingTimeStart)
         newErrors.workingTimeStart = "Start time is required";
       if (!formData.workingTimeEnd)
@@ -145,10 +148,8 @@ export default function PostJob() {
     }
 
     if (currentStep === 3) {
-      if (!formData.city.trim())
-        newErrors.city = "City is required";
-      if (!formData.state.trim())
-        newErrors.state = "State is required";
+      if (!formData.city.trim()) newErrors.city = "City is required";
+      if (!formData.state.trim()) newErrors.state = "State is required";
       if (!formData.district.trim())
         newErrors.district = "District is required";
       if (!formData.workplaceAddress.trim())
@@ -182,25 +183,29 @@ export default function PostJob() {
       return;
     }
 
-    // ✅ FLAT payload — every key matches your Mongoose schema exactly
-    // ❌ Before (WRONG): nested objects workingTime:{}, salary:{}, location:{}
-    // ✅ After  (CORRECT): flat fields workingTimeStart, salaryMin, city, etc.
+   
+
+    // 🔥 NOW CREATE PAYLOAD
     const payload = {
-      workPlaceName:    formData.workPlaceName,
-      jobTitle:         formData.jobTitle,
-      jobSummary:       formData.jobSummary,
-      responsibilities: formData.responsibilities.filter((r) => r.trim() !== ""),
-      requiredSkills:   formData.requiredSkills,
-      jobType:          formData.jobType,
+      workPlaceName: formData.workPlaceName,
+      jobTitle: formData.jobTitle,
+      jobSummary: formData.jobSummary,
+      responsibilities: formData.responsibilities.filter(
+        (r) => r.trim() !== ""
+      ),
+      requiredSkills: formData.requiredSkills,
+      jobType: formData.jobType,
       workingTimeStart: formData.workingTimeStart,
-      workingTimeEnd:   formData.workingTimeEnd,
-      salaryMin:        parseFloat(formData.salaryMin),
-      salaryMax:        parseFloat(formData.salaryMax),
-      salaryType:       formData.salaryType,
-      city:             formData.city,
-      state:            formData.state,
-      district:          formData.district,
+      workingTimeEnd: formData.workingTimeEnd,
+      salaryMin: parseFloat(formData.salaryMin),
+      salaryMax: parseFloat(formData.salaryMax),
+      salaryType: formData.salaryType,
+      city: formData.city,
+      state: formData.state,
+      district: formData.district,
       workplaceAddress: formData.workplaceAddress,
+
+      
     };
 
     try {
@@ -218,40 +223,18 @@ export default function PostJob() {
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 401) {
-          alert("Session expired or unauthorized. Please log in again.");
-          return;
-        }
-        throw new Error(data?.message || "Failed to post job. Please try again.");
+        throw new Error(data?.message || "Failed to post job.");
       }
 
       alert("Job posted successfully!");
-
-      // Reset form to initial state
-      setFormData({
-        jobTitle: "",
-        workPlaceName: "",
-        jobType: "",
-        workingTimeStart: "",
-        workingTimeEnd: "",
-        salaryMin: "",
-        salaryMax: "",
-        salaryType: "",
-        jobSummary: "",
-        responsibilities: [""],
-        requiredSkills: [],
-        city: "",
-        state: "",
-        district: "",
-        workplaceAddress: "",
-      });
-      setErrors({});
-      setStep(1);
     } catch (error) {
-      alert(error.message || "Something went wrong. Please try again.");
+      alert(error.message);
     } finally {
       setIsLoading(false);
     }
+
+    
+  
   };
 
   const steps = [
@@ -273,39 +256,34 @@ export default function PostJob() {
     }
   };
   useEffect(() => {
+    const fetchEmployerProfile = async () => {
+      const token = localStorage.getItem("token");
 
-  const fetchEmployerProfile = async () => {
+      if (!token) return;
 
-    const token = localStorage.getItem("token");
+      try {
+        const res = await fetch(
+          "http://localhost:5001/api/employer-profile/me",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-    if (!token) return;
+        const data = await res.json();
 
-    try {
+        setFormData((prev) => ({
+          ...prev,
+          workPlaceName: data.businessName || "",
+        }));
+      } catch (error) {
+        console.error("Failed to fetch employer profile");
+      }
+    };
 
-      const res = await fetch("http://localhost:5001/api/employer-profile/me", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      const data = await res.json();
-
-      setFormData(prev => ({
-        ...prev,
-        workPlaceName: data.businessName || ""
-      }));
-
-    } catch (error) {
-
-      console.error("Failed to fetch employer profile");
-
-    }
-
-  };
-
-  fetchEmployerProfile();
-
-}, []);
+    fetchEmployerProfile();
+  }, []);
 
   return (
     <div className="min-h-full bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
@@ -378,16 +356,15 @@ export default function PostJob() {
             {step === 1 && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Workplace Name
-  </label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Workplace Name
+                    </label>
 
-  <div className="w-full px-4 py-2.5 border border-gray-200 rounded-md bg-gray-50 text-gray-900 font-medium">
-    {formData.workPlaceName || "Loading workplace name..."}
-  </div>
-
-</div>
+                    <div className="w-full px-4 py-2.5 border border-gray-200 rounded-md bg-gray-50 text-gray-900 font-medium">
+                      {formData.workPlaceName || "Loading workplace name..."}
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Job Title <span className="text-red-500">*</span>
@@ -441,7 +418,9 @@ export default function PostJob() {
                         value={formData.workingTimeStart}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeStart ? "border-red-500" : "border-gray-300"
+                          errors.workingTimeStart
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                       />
                       <ErrorMessage field="workingTimeStart" errors={errors} />
@@ -456,7 +435,9 @@ export default function PostJob() {
                         value={formData.workingTimeEnd}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.workingTimeEnd ? "border-red-500" : "border-gray-300"
+                          errors.workingTimeEnd
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                       />
                       <ErrorMessage field="workingTimeEnd" errors={errors} />
@@ -478,7 +459,9 @@ export default function PostJob() {
                         value={formData.salaryType}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryType ? "border-red-500" : "border-gray-300"
+                          errors.salaryType
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                       >
                         <option value="">Select payment period</option>
@@ -498,7 +481,9 @@ export default function PostJob() {
                         value={formData.salaryMin}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMin ? "border-red-500" : "border-gray-300"
+                          errors.salaryMin
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
@@ -514,7 +499,9 @@ export default function PostJob() {
                         value={formData.salaryMax}
                         onChange={handleChange}
                         className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.salaryMax ? "border-red-500" : "border-gray-300"
+                          errors.salaryMax
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                         placeholder={getSalaryPlaceholder(formData.salaryType)}
                       />
@@ -635,7 +622,9 @@ export default function PostJob() {
                   ) : (
                     <div className="text-center py-8 bg-gray-50 rounded-md border border-gray-200">
                       <Target className="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                      <p className="text-gray-500 text-sm">No skills added yet</p>
+                      <p className="text-gray-500 text-sm">
+                        No skills added yet
+                      </p>
                     </div>
                   )}
                 </div>
@@ -706,7 +695,9 @@ export default function PostJob() {
                     onChange={handleChange}
                     rows="3"
                     className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                      errors.workplaceAddress ? "border-red-500" : "border-gray-300"
+                      errors.workplaceAddress
+                        ? "border-red-500"
+                        : "border-gray-300"
                     }`}
                     placeholder="Enter the complete workplace address"
                   />

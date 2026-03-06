@@ -3,12 +3,12 @@ import { createContext, useState, useEffect, useCallback } from "react";
 export const JobContext = createContext();
 
 const EMPLOYER_API = "http://localhost:5001/api/jobs";
-const ADMIN_API    = "http://localhost:5001/api/admin";
+const ADMIN_API = "http://localhost:5001/api/admin";
 
 export function JobProvider({ children }) {
-  const [jobs,    setJobs]    = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState(null);
+  const [error, setError] = useState(null);
 
   // ─────────────────────────────────────────
   // HELPERS
@@ -41,6 +41,11 @@ export function JobProvider({ children }) {
       return;
     }
 
+    if (role !== "admin" && role !== "employer") {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -50,7 +55,7 @@ export function JobProvider({ children }) {
           ? `${ADMIN_API}/jobs`
           : `${EMPLOYER_API}/my-jobs`;
 
-      const res  = await fetch(url, { headers: authHeader() });
+      const res = await fetch(url, { headers: authHeader() });
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || "Failed to fetch jobs");
@@ -81,8 +86,8 @@ export function JobProvider({ children }) {
   // HELPER: call admin PUT endpoint
   // ─────────────────────────────────────────
   const adminPut = async (id, action) => {
-    const res  = await fetch(`${ADMIN_API}/jobs/${id}/${action}`, {
-      method:  "PUT",
+    const res = await fetch(`${ADMIN_API}/jobs/${id}/${action}`, {
+      method: "PUT",
       headers: authHeader(),
     });
     const data = await res.json();
@@ -94,7 +99,7 @@ export function JobProvider({ children }) {
 
 
 
-   // ─────────────────────────────────────────
+  // ─────────────────────────────────────────
   // UPDATE JOB
   // ─────────────────────────────────────────
 
@@ -137,13 +142,13 @@ export function JobProvider({ children }) {
   const deleteJob = async (id) => {
     try {
       const role = getUserRole();
-      const url  =
+      const url =
         role === "admin"
           ? `${ADMIN_API}/jobs/${id}`
           : `${EMPLOYER_API}/${id}`;
 
       const res = await fetch(url, {
-        method:  "DELETE",
+        method: "DELETE",
         headers: authHeader(),
       });
 
